@@ -2,31 +2,34 @@ import React, { useState, useEffect } from "react";
 import api from "../../api.js";
 
 function ProfileEdit() {
-    const username = localStorage.getItem('username');
-    const pfp = localStorage.getItem('profile_image');
-    const bio = localStorage.getItem('bio');
-    const [recentAnime, setRecentAnime] = useState([]);
+    const id = localStorage.getItem('user_id');
+    const [bio, setBio] = useState(" ");
+    const [pfp, setPfp] = useState(" ");
+    const [nickname, setNickname] = useState(" ");
     const [formData, setFormData] = useState({
-        username: username || "",
+        username: nickname || "",
         profile_image: pfp || "",
         bio: bio || "",
     });
 
     useEffect(() => {
-        fetchRecentAnime();
-    }, []);
+        fetchUserProfile();
+    }, [id]);
 
-    const fetchRecentAnime = async () => {
-        const response = await api.get(`user/anime/recent/${username}/`);
-        try {
-            if (response.status === 200) {
-                console.log(response.data);
-                setRecentAnime(response.data);
-            } else {
-                console.log("Error fetching recent anime");
-            }
-        } catch (error) {
-            console.error("There was an error fetching the profile!", error);
+    const fetchUserProfile = async () => {
+        const response = await api.get(`/user/profile/${id}/`);
+        if (response.status === 200) {
+            console.log(response.data);
+            setBio(response.data.bio);
+            setPfp(response.data.profile_image);
+            setNickname(response.data.username);
+            setFormData({
+                username: response.data.username || "",
+                profile_image: response.data.profile_image || "",
+                bio: response.data.bio || "",
+            });
+        } else {
+            console.log("Error fetching recent anime");
         }
     };
 
@@ -45,37 +48,38 @@ function ProfileEdit() {
                 ...prevData,
                 [name]: files[0],  // Save the file, not URL.createObjectURL
             }));
+            if (name === 'profile_image') setPfp(URL.createObjectURL(files[0]));
         }
     };
 
-
-const handleSubmit = async (e) => {
-    e.preventDefault();
-    const formDataToSend = new FormData();
-    formDataToSend.append('username', formData.username);
-    formDataToSend.append('bio', formData.bio);
-    if (formData.profile_image) {
-        formDataToSend.append('profile_image', formData.profile_image);
-    }
-
-    try {
-        const response = await api.put(`user/profile/${username}/update/`, formDataToSend, {
-            headers: {
-                'Content-Type': 'multipart/form-data',
-            },
-        });
-        if (response.status === 200) {
-            console.log("Profile updated successfully");
-            localStorage.setItem('username', formData.username);
-            localStorage.setItem('profile_image', formData.profile_image);
-            localStorage.setItem('bio', formData.bio);
-        } else {
-            console.log("Error updating profile");
+    const handleSubmit = async (e) => {
+        e.preventDefault();
+        const formDataToSend = new FormData();
+        formDataToSend.append('username', formData.username);
+        formDataToSend.append('bio', formData.bio);
+        if (formData.profile_image && formData.profile_image instanceof File) {
+            formDataToSend.append('profile_image', formData.profile_image);
         }
-    } catch (error) {
-        console.error("There was an error updating the profile!", error);
-    }
-};
+
+        try {
+            const response = await api.put(`user/profile/${id}/update/`, formDataToSend, {
+                headers: {
+                    'Content-Type': 'multipart/form-data',
+                },
+            });
+            if (response.status === 200) {
+                console.log("Profile updated successfully");
+                localStorage.setItem('id', id);
+                localStorage.setItem('username', formData.username);
+                localStorage.setItem('profile_image', formData.profile_image);
+                localStorage.setItem('bio', formData.bio);
+            } else {
+                console.log("Error updating profile");
+            }
+        } catch (error) {
+            console.error("There was an error updating the profile!", error);
+        }
+    };
 
     const handleLogout = () => {
         localStorage.clear();
@@ -91,7 +95,7 @@ const handleSubmit = async (e) => {
                 <div className="bg-white text-gray-800 rounded-lg shadow-lg p-6 md:w-1/2 max-h-fit mx-auto">
                     <div className="flex flex-col items-center">
                         <img
-                            src={formData.profile_image || pfp}
+                            src={pfp}
                             alt="profile"
                             className="rounded-full w-32 h-32 object-cover mb-4 shadow-lg"
                         />
@@ -123,7 +127,7 @@ const handleSubmit = async (e) => {
                                 <textarea
                                     id="bio"
                                     name="bio"
-                                    value={formData.bio}
+                                    value={bio}
                                     onChange={handleInputChange}
                                     className="mt-2 w-full p-2 border border-gray-300 rounded-md"
                                     rows="4"
@@ -135,6 +139,7 @@ const handleSubmit = async (e) => {
                             >
                                 Save Changes
                             </button>
+                            <a className="bg-indigo-600 hover:bg-indigo-500 text-white py-2 px-4 rounded-full mt-6 shadow-lg transition duration-300" href="/profile">Back</a>
                         </form>
                         <button
                             onClick={handleLogout}

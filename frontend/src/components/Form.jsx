@@ -7,12 +7,9 @@ import api from '../api';
 function Form({route, method}) {
     const name = method === 'login' ? 'Login' : 'Register';
 
-
     const [username, setUsername] = useState("");
     const [password, setPassword] = useState("");
     const [email, setEmail] = useState("");
-    const [profile_image, setProfileImage] = useState("");
-    //const [loading, setLoading] = useState(false);
     const navigate = useNavigate();
 
     const handleSubmit = async (e) => {
@@ -41,14 +38,10 @@ function Form({route, method}) {
             }
         }};
 
-
-
     return (
         <div className="flex items-center justify-center min-h-screen">
             <div className="flex flex-col space-y-4">
-                <h1 className="text-white text-center" >
-                    {name}
-                </h1>
+                <h1 className="text-white text-center">{name}</h1>
                 <form className="flex flex-col space-y-6" onSubmit={handleSubmit}>
                     <input
                         className="border p-2"
@@ -58,15 +51,16 @@ function Form({route, method}) {
                         type="text"
                         required
                     />
-                    {name === 'Register' &&
-                        (<input
-                        className="border p-2"
-                        placeholder="email"
-                        value={email}
-                        onChange={(e) => setEmail(e.target.value)}
-                        type="email"
-                        required
-                    />)}
+                    {name === 'Register' && (
+                        <input
+                            className="border p-2"
+                            placeholder="email"
+                            value={email}
+                            onChange={(e) => setEmail(e.target.value)}
+                            type="email"
+                            required
+                        />
+                    )}
                     <input
                         className="border p-2"
                         placeholder="password"
@@ -75,7 +69,6 @@ function Form({route, method}) {
                         type="password"
                         required
                     />
-
                     <button className="bg-red-500 rounded p-2" type="submit">
                         {name}
                     </button>

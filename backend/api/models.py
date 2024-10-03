@@ -117,9 +117,9 @@ class FriendRequest(models.Model):
 
 class Profile(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
-    username = models.CharField(max_length=150)  # Add the username field
+    username = models.CharField(max_length=150)
     bio = models.TextField(default='No bio')
     profile_image = models.ImageField(upload_to='profile_images/', null=True, blank=True)
 
     def __str__(self):
-        return self.username  # Now it returns the username
+        return self.user
