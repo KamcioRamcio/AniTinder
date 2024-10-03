@@ -18,14 +18,26 @@ function Find() {
     const [userAnime, setUserAnime] = useState([]);
     const [tempDeletedAnime, setTempDeletedAnime] = useState([]);
     const [quotes, setQuotes] = useState([]);
+    const [id, setId] = useState('');
+    const [pfp ,setProfileImage] = useState('');
+    const [bio, setBio] = useState('');
+    const [nickname, setNickname] = useState('');
+
 
     useEffect(() => {
+        if (id) {
+            fetchUserProfile(id);
+        }
+    }, [id]);
+
+   useEffect(() => {
         fetchAnime();
+        fetchUsers();
         fetchTempDeletedAnime();
         fetchQuotes();
         fetchUserAnimeList();
-        fetchUserProfile(username);
     }, []);
+
 
     useEffect(() => {
         filterAnime(anime, selectedScore, userGenres);
@@ -46,9 +58,25 @@ function Find() {
         }
     };
 
-
-
-
+    const fetchUsers = async () => {
+    try {
+        const response = await api.get("users/");
+        if (Array.isArray(response.data)) {
+            const username = localStorage.getItem('username');
+            const user = response.data.find(user => user.username === username);
+            if (user) {
+                setId(user.id);
+                localStorage.setItem('user_id', user.id);
+            } else {
+                console.error("User not found in response data");
+            }
+        } else {
+            console.error("Response data is not an array:", response.data);
+        }
+    } catch (error) {
+        console.error("There was an error fetching the users!", error);
+    }
+};
     const fetchUserAnimeList = async () => {
         try {
             const response = await api.get("user/anime/");
@@ -61,19 +89,23 @@ function Find() {
             console.error("There was an error fetching the anime!", error);
         }
     };
-    const fetchUserProfile = async (username) => {
-    try {
-        const response = await api.get(`user/profile/${username}/`);
-        if (response.status === 200) {
-            localStorage.setItem('profile_image', response.data.profile_picture);
-            localStorage.setItem('bio', response.data.bio);
-        } else {
-            console.error("Response data is not an array:", response.data);
+
+    const fetchUserProfile = async (userId) => {
+        try {
+            const response = await api.get(`user/profile/${userId}/`);
+            if (response.status === 200) {
+                const profile = response.data;
+                setProfileImage(profile.profile_image);
+                setBio(profile.bio);
+                setNickname(profile.nickname);
+
+            } else {
+                console.error("Response data is not an array:", response.data);
+            }
+        } catch (error) {
+            console.error("There was an error fetching the profile!", error);
         }
-    } catch (error) {
-        console.error("There was an error fetching the profile!", error);
-    }
-};
+    };
     const fetchTempDeletedAnime = async () => {
         try {
             const response = await api.get("user/anime/temp-deleted/");
@@ -241,7 +273,7 @@ function Find() {
                         <FaCog className="text-2xl text-[#c1121f]"/>
                     </button>
                     <img
-                        src={localStorage.getItem('profile_image')}
+                        src={pfp}
                         alt="Anime"
                         className="w-40 h-40 rounded-full mb-4 mx-auto shadow-lg"
                     />

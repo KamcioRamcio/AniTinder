@@ -10,8 +10,8 @@ urlpatterns = [
 
     path('read-json/', views.read_json_file_view),
     path('user/anime/', views.UserAnimeView.as_view(), name='user-anime'),
-    path('user/anime/recent/<str:username>/', views.RecentAnimeView.as_view(), name='recent-anime'),
-    path('user/anime/<str:username>/', views.UserAnimeByUsernameView.as_view(), name='user-anime-list-by-username'),
+    path('user/anime/recent/<int:id>/', views.RecentAnimeView.as_view(), name='recent-anime'),
+    path('user/anime/<int:id>/', views.UserAnimeByUsernameView.as_view(), name='user-anime-list-by-username'),
     path('anime/all/', views.AnimeAllView.as_view(), name='anime-list'),
     path('user/anime/delete/<int:pk>/', views.UserAnimeDeleteView.as_view(), name='user-anime-delete'),
     path('user/anime/temp-deleted/', views.TempDeletedAnimeView.as_view(), name='user-anime-temp-deleted'),
@@ -33,8 +33,8 @@ urlpatterns = [
     path('user/reset/done/', auth_views.PasswordResetCompleteView.as_view(), name='password_reset_complete'),
 
     #USERS
-    path('user/profile/<str:username>/', views.UserProfileView.as_view(), name='profile'),
-    path('user/profile/<str:username>/update/', views.UserProfileUpdateView.as_view(), name='user_profile_update'),
+    path('user/profile/<int:id>/', views.UserProfileView.as_view(), name='profile'),
+    path('user/profile/<int:id>/update/', views.UserProfileUpdateView.as_view(), name='user_profile_update'),
 
 
 

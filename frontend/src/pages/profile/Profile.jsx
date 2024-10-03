@@ -10,17 +10,20 @@ import React, {useEffect, useState} from "react";
 * */
 
 function Profile() {
-    const username = localStorage.getItem('username');
-    const pfp = localStorage.getItem('profile_image');
-    const bio  = localStorage.getItem('bio');
+    const [bio, setBio] = useState('');
+    const [pfp, setPfp] = useState('');
+    const [nickname, setNickname] = useState('');
     const [recentAnime, setRecentAnime] = React.useState([]);
+    const id = localStorage.getItem('user_id');
 
     useEffect(() => {
         fetchRecentAnime();
+        fetchUserProfile();
     }, []);
 
+    console.log(id)
     const fetchRecentAnime = async () => {
-        const response = await api.get(`user/anime/recent/${username}/`);
+        const response = await api.get(`user/anime/recent/${id}/`);
         try {
             if (response.status === 200) {
                 console.log(response.data);
@@ -37,6 +40,17 @@ function Profile() {
         localStorage.clear();
         window.location.href = "/login";
     };
+    const fetchUserProfile = async () => {
+        const response = await api.get(`/user/profile/${id}/`);
+        if (response.status === 200) {
+            console.log(response.data);
+            setBio(response.data.bio);
+            setPfp(response.data.profile_image);
+            setNickname(response.data.username);
+        } else {
+            console.log("Error fetching recent anime");
+        }
+    }
 
 return (
   <div className="min-h-screen bg-gradient-to-r from-violet-500 to-indigo-600 text-white">
@@ -63,7 +77,7 @@ return (
       <div className="bg-white text-gray-800 rounded-lg shadow-lg p-6 md:w-1/2 max-h-fit">
         <div className="flex flex-col items-center">
           <img src={pfp} alt="profile" className="rounded-full w-32 h-32 object-cover mb-4 shadow-lg" />
-          <h2 className="font-bold text-2xl"><span className="text-indigo-600">{username}</span></h2>
+          <h2 className="font-bold text-2xl"><span className="text-indigo-600">{nickname}</span></h2>
           <p className="text-lg mt-4"><span className="text-gray-600">{bio}</span></p>
           <a href="/profile-edit" className="bg-indigo-600 hover:bg-indigo-500 text-white py-2 px-4 rounded-full mt-6 shadow-lg transition duration-300">
             Edit Profile
@@ -76,7 +90,7 @@ return (
         <ul className="space-y-4">
           {recentAnime.map((anime) => (
             <li key={anime.mal_id} className="flex items-center gap-4 border-b border-gray-200 pb-4">
-              <img src={anime.image_url} alt={anime.title} className="h-24 rounded-lg shadow-md"/>
+              <img src={anime.image_url} alt={anime.title} className="h-24 w-20 rounded-lg shadow-md"/>
               <div>
                 <a className="text-lg font-semibold text-indigo-600 hover:underline" href={`https://myanimelist.net/anime/${anime.mal_id}`} target="_blank" rel="noopener noreferrer">
                   {anime.title}

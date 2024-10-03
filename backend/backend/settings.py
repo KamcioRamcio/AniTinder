@@ -15,7 +15,7 @@ from pathlib import Path
 from datetime import timedelta
 
 
-from django.conf.global_settings import EMAIL_BACKEND
+from django.conf.global_settings import EMAIL_BACKEND, STORAGES
 from dotenv import load_dotenv
 import os
 
@@ -71,7 +71,7 @@ INSTALLED_APPS = [
     'api',
     'rest_framework',
     'corsheaders',
-    "storages",
+    'storages',
 
 ]
 
@@ -165,10 +165,19 @@ CORS_ALLOWS_CREDENTIALS = True
 
 
 # AWS S3
-AWS_ACCESS_KEY_ID = 'AKIASIVGLJXSDIXCTK3W'
-AWS_SECRET_ACCESS_KEY = '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'
+AWS_ACCESS_KEY_ID = 'AKIASIVGLJXSOI26GVYN'
+AWS_SECRET_ACCESS_KEY = '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'
+
 AWS_STORAGE_BUCKET_NAME = 'anitinder-bucket'
 AWS_S3_CUSTOM_DOMAIN = f'{AWS_STORAGE_BUCKET_NAME}.s3.amazonaws.com'
+AWS_S3_FILE_OVERWRITE = False
+AWS_S3_REGION_NAME = 'eu-central-1'
 
-MEDIA_URL = f'https://{AWS_S3_CUSTOM_DOMAIN}/media/'
-DEFAULT_FILE_STORAGE = 'storages.backends.s3boto3.S3Boto3Storage'
+STORAGES = {
+    "default": {
+        "BACKEND": "storages.backends.s3boto3.S3Boto3Storage",
+    },
+    "staticfiles": {
+        "BACKEND": "storages.backends.s3boto3.S3Boto3Storage",
+    },
+}

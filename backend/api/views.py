@@ -35,7 +35,7 @@ class UserProfileView(generics.RetrieveAPIView):
 
     def get_object(self):
         try:
-            return Profile.objects.get(user__username=self.kwargs['username'])
+            return Profile.objects.get(user__id=self.kwargs['id'])
         except Profile.DoesNotExist:
             raise NotFound("Profile not found")
 
@@ -46,9 +46,24 @@ class UserProfileUpdateView(generics.UpdateAPIView):
 
     def get_object(self):
         try:
-            return Profile.objects.get(user__username=self.kwargs['username'])
+            return Profile.objects.get(user__id=self.kwargs['id'])
         except Profile.DoesNotExist:
             raise NotFound("Profile not found")
+
+    def perform_update(self, serializer):
+        serializer.save()
+
+class UserAnimeByUsernameView(generics.ListAPIView):
+    serializer_class = UserAnimeSerializer
+    permission_classes = [AllowAny]
+    def get_queryset(self):
+        id = self.kwargs.get('id')
+        try:
+            user = User.objects.get(id=id)
+        except User.DoesNotExist:
+            raise NotFound("User not found")
+
+        return UserAnimeList.objects.filter(author=user)
 
 
 class UserListView(generics.ListAPIView):
@@ -105,26 +120,15 @@ class UserAnimeView(generics.ListCreateAPIView):
         serializer.is_valid(raise_exception=True)
         serializer.save(author=self.request.user)
 
-class UserAnimeByUsernameView(generics.ListAPIView):
-    serializer_class = UserAnimeSerializer
-    permission_classes = [AllowAny]
-    def get_queryset(self):
-        username = self.kwargs.get('username')
-        try:
-            user = User.objects.get(username=username)
-        except User.DoesNotExist:
-            raise NotFound("User not found")
-
-        return UserAnimeList.objects.filter(author=user)
 
 class RecentAnimeView(generics.ListCreateAPIView):
     serializer_class = UserAnimeSerializer
     permission_classes = [AllowAny]
 
     def get_queryset(self):
-        username = self.kwargs.get('username')
+        id = self.kwargs.get('id')
         try:
-            user = User.objects.get(username=username)
+            user = User.objects.get(id=id)
         except User.DoesNotExist:
             raise NotFound("User not found")
         return UserAnimeList.objects.filter(author=user).order_by('-add_time')[:5]
