@@ -58,3 +58,8 @@ class TempDeletedAnimeSerializer(serializers.ModelSerializer):
         model = TempDeletedAnime
         fields = ['id', 'author', 'title', 'mal_id']
         extra_kwargs = {'author': {'read_only': True}}
+
+class AllUsersSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Profile
+        fields = ['id', 'username', 'profile_image']

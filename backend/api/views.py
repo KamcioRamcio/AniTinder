@@ -14,7 +14,7 @@ from rest_framework.exceptions import NotFound
 from .models import Genre, Anime, UserAnimeList, TempDeletedAnime, AnimeQuotes, Profile
 
 from .serializers import UserSerializer, GenreSerializer, AnimeSerializer, UserAnimeSerializer, \
-    TempDeletedAnimeSerializer, QuoteSerializer, ProfileSerializer
+    TempDeletedAnimeSerializer, QuoteSerializer, ProfileSerializer, AllUsersSerializer
 
 
 # Create your views here.
@@ -185,3 +185,8 @@ class TempDeletedAnimeView(generics.ListCreateAPIView):
 
     def perform_create(self, serializer):
         serializer.save(author=self.request.user)
+
+class AllUsersView (generics.ListAPIView):
+    queryset = Profile.objects.all()
+    serializer_class = AllUsersSerializer
+    permission_classes = [AllowAny]
