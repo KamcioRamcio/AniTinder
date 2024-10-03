@@ -35,7 +35,7 @@ urlpatterns = [
     #USERS
     path('user/profile/<int:id>/', views.UserProfileView.as_view(), name='profile'),
     path('user/profile/<int:id>/update/', views.UserProfileUpdateView.as_view(), name='user_profile_update'),
-
+    path('all/users/', views.AllUsersView.as_view(), name='all-users'),
 
 
 ]
