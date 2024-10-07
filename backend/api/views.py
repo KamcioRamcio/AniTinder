@@ -1,6 +1,6 @@
 import json
 import os
-
+#eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzI4MzE0MTAwLCJpYXQiOjE3MjgzMTIzMDAsImp0aSI6ImY5ZjI0YmQ2OTNhODQ1ZGFhNDc1NjYyMWIyYTcyYTkxIiwidXNlcl9pZCI6MX0.b7NCYAnvPoMuGuxeMoNfprajbOa6cgI38cBg-fkIYsc
 from django.contrib.auth.models import User
 from django.db.models.functions import Lower, Substr
 from django.http import JsonResponse
@@ -11,10 +11,13 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.exceptions import NotFound
 
-from .models import Genre, Anime, UserAnimeList, TempDeletedAnime, AnimeQuotes, Profile
+
+from .models import Genre, Anime, UserAnimeList, TempDeletedAnime, AnimeQuotes, Profile, \
+    FriendRequest, FriendList
 
 from .serializers import UserSerializer, GenreSerializer, AnimeSerializer, UserAnimeSerializer, \
-    TempDeletedAnimeSerializer, QuoteSerializer, ProfileSerializer, AllUsersSerializer
+    TempDeletedAnimeSerializer, QuoteSerializer, ProfileSerializer, AllUsersSerializer, FriendRequestSerializer,\
+    FriendRequestAcceptSerializer
 
 
 # Create your views here.
@@ -190,3 +193,46 @@ class AllUsersView (generics.ListAPIView):
     queryset = Profile.objects.all()
     serializer_class = AllUsersSerializer
     permission_classes = [AllowAny]
+
+class FriendRequestView(generics.ListCreateAPIView):
+    queryset = FriendRequest.objects.all()
+    serializer_class = FriendRequestSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        user = self.request.user
+        return FriendRequest.objects.filter(receiver=user)
+
+    def perform_create(self, serializer):
+        friend_id = self.kwargs.get('friendId')
+        try:
+            friend = User.objects.get(id=friend_id)
+            serializer.save(sender=self.request.user, receiver=friend)
+        except User.DoesNotExist:
+            raise NotFound("User not found")
+
+
+class AcceptFriendRequestView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, *args, **kwargs):
+        serializer = FriendRequestAcceptSerializer(data=request.data, context={'request': request})
+        if serializer.is_valid():
+            success = serializer.accept()
+            if success:
+                return Response({'message': 'Friend request accepted'}, status=status.HTTP_200_OK)
+            return Response({'error': 'Unable to accept friend request'}, status=status.HTTP_400_BAD_REQUEST)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+
+class FriendListView(generics.ListCreateAPIView):
+    serializer_class = UserSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        user = self.request.user
+        try:
+            return FriendList.objects.filter(user_id=user)
+        except FriendList.DoesNotExist:
+            raise NotFound("Friend list not found")

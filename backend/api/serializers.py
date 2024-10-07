@@ -1,6 +1,8 @@
 from rest_framework import serializers
 from django.contrib.auth.models import User
-from .models import Genre, Anime, UserAnimeList, TempDeletedAnime, AnimeQuotes, Profile
+from urllib3 import request
+
+from .models import Genre, Anime, UserAnimeList, TempDeletedAnime, AnimeQuotes, Profile, FriendRequest
 
 
 class UserSerializer(serializers.ModelSerializer):
@@ -62,4 +64,37 @@ class TempDeletedAnimeSerializer(serializers.ModelSerializer):
 class AllUsersSerializer(serializers.ModelSerializer):
     class Meta:
         model = Profile
-        fields = ['id', 'username', 'profile_image']
+        fields = ['id', 'username', 'profile_image', 'user_id']
+
+class FriendRequestSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = FriendRequest
+        fields = ['id', 'sender', 'receiver', 'is_active']
+        extra_kwargs = {'sender': {'read_only': True}, 'receiver': {'read_only': True}}
+
+from rest_framework import serializers
+from .models import FriendRequest
+
+class FriendRequestAcceptSerializer(serializers.Serializer):
+    request_id = serializers.IntegerField()
+
+    def validate(self, data):
+        request_id = data.get('request_id')
+        user = self.context['request'].user
+        try:
+            # Ensure the request exists and is valid
+            friend_request = FriendRequest.objects.get(id=request_id, receiver=user, is_active=True)
+        except FriendRequest.DoesNotExist:
+            raise serializers.ValidationError("Friend request not found or already accepted.")
+        return data
+
+    def accept(self):
+        request_id = self.validated_data.get('request_id')
+        user = self.context['request'].user
+        try:
+            friend_request = FriendRequest.objects.get(id=request_id, receiver=user, is_active=True)
+            return friend_request.accept()
+        except FriendRequest.DoesNotExist:
+            return False
+
+

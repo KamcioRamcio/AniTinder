@@ -57,7 +57,7 @@ function App() {
                 }
                 >
                 </Route>
-                <Route path="/profile-all/:userId" element={<ProfileAll />} />
+                <Route path="/profile/:userId" element={<ProfileAll />} />
                 <Route path="/" element={<HomeAll />} />
                 <Route path="/login" element={<Login />} />
                 <Route path="/register" element={<RegisterPage />} />
