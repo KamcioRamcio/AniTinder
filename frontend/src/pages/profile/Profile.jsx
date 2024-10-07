@@ -104,7 +104,7 @@ function Profile() {
                             <li key={user.id} className="flex items-center gap-4 border-b border-gray-200 pb-4">
                                 <img src={user.profile_image} alt={user.username} className="h-24 w-20 rounded-lg shadow-md"/>
                                 <div>
-                                    <a className="text-lg font-semibold text-indigo-600 hover:underline" href=''>
+                                    <a className="text-lg font-semibold text-indigo-600 hover:underline" href={`/profile-all/${user.id}`}>
                                         {user.username}
                                     </a>
                                 </div>

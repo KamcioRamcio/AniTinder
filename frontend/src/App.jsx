@@ -9,6 +9,7 @@ import AnimneList from "./pages/AnimeList.jsx";
 import Profile from "./pages/profile/Profile.jsx";
 import ProfileEdit from "./pages/profile/ProfileEdit.jsx";
 import PSWReset from "./pages/password/PasswordReset.jsx";
+import ProfileAll from "./pages/profile/ProfileAll.jsx";
 
 function App() {
 
@@ -56,7 +57,7 @@ function App() {
                 }
                 >
                 </Route>
-
+                <Route path="/profile-all/:userId" element={<ProfileAll />} />
                 <Route path="/" element={<HomeAll />} />
                 <Route path="/login" element={<Login />} />
                 <Route path="/register" element={<RegisterPage />} />
