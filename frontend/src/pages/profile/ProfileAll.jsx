@@ -1,6 +1,6 @@
 import api from "../../api.js";
-import React, {useEffect, useState} from "react";
-
+import { useParams } from 'react-router-dom';
+import { useState, useEffect } from 'react';
 /* TODO
     - Create a Profile page that displays the user's information
     - Add add_time to user_anime_list to allow to show recently added anime
@@ -9,24 +9,24 @@ import React, {useEffect, useState} from "react";
 
 * */
 
+
+
 function ProfileAll() {
+    const { userId } = useParams();
     const [bio, setBio] = useState('');
     const [pfp, setPfp] = useState('');
     const [nickname, setNickname] = useState('');
     const [recentAnime, setRecentAnime] = React.useState([]);
-    const id = localStorage.getItem('user_id');
 
     useEffect(() => {
         fetchRecentAnime();
         fetchUserProfile();
     }, []);
 
-    console.log(id)
     const fetchRecentAnime = async () => {
-        const response = await api.get(`user/anime/recent/${id}/`);
+        const response = await api.get(`user/anime/recent/${userId}/`);
         try {
             if (response.status === 200) {
-                console.log(response.data);
                 setRecentAnime(response.data);
             } else {
                 console.log("Error fetching recent anime");
@@ -36,22 +36,21 @@ function ProfileAll() {
         }
     };
 
-        const handleLogout = () => {
+    const handleLogout = () => {
         localStorage.clear();
         window.location.href = "/login";
     };
+
     const fetchUserProfile = async () => {
-        const response = await api.get(`/user/profile/${id}/`);
+        const response = await api.get(`/user/profile/${userId}/`);
         if (response.status === 200) {
-            console.log(response.data);
             setBio(response.data.bio);
             setPfp(response.data.profile_image);
             setNickname(response.data.username);
         } else {
             console.log("Error fetching recent anime");
         }
-    }
-
+    };
 
 return (
   <div className="min-h-screen bg-gradient-to-r from-violet-500 to-indigo-600 text-white">
