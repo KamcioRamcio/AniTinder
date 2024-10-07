@@ -75,7 +75,7 @@ class FriendList(models.Model):
             self.save()
 
     def unfriend(self, removee):
-        remover = self  # user who wants to remove a friend
+        remover = self
         remover.remove_friend(removee)
         removee.remove_friend(remover)
         return True

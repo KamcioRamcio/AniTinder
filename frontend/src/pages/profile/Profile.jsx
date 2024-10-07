@@ -14,15 +14,19 @@ function Profile() {
     const [nickname, setNickname] = useState('');
     const [showUsersSearch, setUsersSearch] = useState([]);
     const [recentAnime, setRecentAnime] = useState([]);
+    const [friendRequests, setFriendRequests] = useState([]);
+    const [requestProfiles, setRequestProfiles] = useState([]);
+    const [friends, setFriends] = useState([]);
     const id = localStorage.getItem('user_id');
 
-    // Users
-    const [AllUsers, setAllUsers] = useState([]);
+    const [allUsers, setAllUsers] = useState([]);
 
     useEffect(() => {
         fetchRecentAnime();
         fetchUserProfile();
         fetchAllUsers();
+        fetchFriendRequests();
+        fetchUserFriends()
     }, []);
 
     const fetchRecentAnime = async () => {
@@ -44,15 +48,47 @@ function Profile() {
     };
 
     const fetchUserProfile = async () => {
-        const response = await api.get(`/user/profile/${id}/`);
-        if (response.status === 200) {
-            setBio(response.data.bio);
-            setPfp(response.data.profile_image);
-            setNickname(response.data.username);
-        } else {
-            console.log("Error fetching recent anime");
+        try {
+            const response = await api.get(`/user/profile/${id}/`);
+            if (response.status === 200) {
+                setBio(response.data.bio);
+                setPfp(response.data.profile_image);
+                setNickname(response.data.username);
+            } else {
+                console.log("Error fetching user profile");
+            }
+        } catch (error) {
+            console.error("There was an error fetching the user profile!", error);
         }
     };
+
+    const fetchFriendRequests = async () => {
+        try {
+            const response = await api.get(`/user/friends/requests/`);
+            if (response.status === 200) {
+                const friendRequests = response.data;
+                setFriendRequests(friendRequests);
+
+                const profiles = await Promise.all(friendRequests.map(async (request) => {
+                    if (request.sender) {
+                        const profileResponse = await api.get(`/user/profile/${request.sender}/`); // Use sender ID here
+                        return profileResponse.data;
+                    } else {
+                        console.error("sender_id is undefined for request:", request);
+                        return null;
+                    }
+                }));
+
+                const validProfiles = profiles.filter(profile => profile !== null);
+                setRequestProfiles(validProfiles);
+            } else {
+                console.log("Error fetching friend requests");
+            }
+        } catch (error) {
+            console.error("There was an error fetching friend requests!", error);
+        }
+    };
+
 
     const fetchAllUsers = async () => {
         const response = await api.get(`/all/users/`);
@@ -63,15 +99,54 @@ function Profile() {
         }
     };
 
+    const AddFriend = async (friendId) => {
+        try {
+            const response = await api.post(`/user/friends/add/${friendId}/`);
+            if (response.status === 200) {
+                console.log(response.data);
+            } else {
+                console.log("Error adding friend");
+            }
+        } catch (error) {
+            console.error("There was an error adding the friend!", error);
+        }
+    };
+
+    const fetchUserFriends = async () => {
+        const response = await api.get(`/user/friends/`);
+        if (response.status === 200) {
+            setFriends(response.data);
+        } else {
+            console.log("Error fetching user friends");
+        }
+    }
+
+    const AcceptFriend = async (request_id) => {
+        console.log("Request ID being sent:", request_id); // Add this log
+        try {
+            const response = await api.post(`/user/friend-request/accept/`, { request_id }); // Send request_id in body
+            if (response.status === 200) {
+                console.log(response.data);
+                fetchFriendRequests(); // Refresh list after acceptance
+                fetchUserFriends();
+            } else {
+                console.log("Error accepting friend");
+            }
+        } catch (error) {
+            console.error("There was an error accepting the friend!", error);
+        }
+    };
+
+
     const CheckUsers = () => {
-        if (AllUsers.some(user => user.username === nickname)) {
-            setAllUsers(AllUsers.filter(user => user.username !== nickname));
+        if (allUsers.some(user => user.username === nickname)) {
+            setAllUsers(allUsers.filter(user => user.username !== nickname));
         }
     };
 
     const handleSearchChange = (event) => {
         const searchTerm = event.target.value.toLowerCase();
-        const filteredUsers = AllUsers.filter(user =>
+        const filteredUsers = allUsers.filter(user =>
             user.username.toLowerCase().includes(searchTerm)
         );
         setUsersSearch(filteredUsers);
@@ -102,12 +177,17 @@ function Profile() {
                     <div className="absolute top-16 right-8 w-1/3 md:w-1/4 bg-white rounded-lg shadow-lg p-6">
                         <ul>{showUsersSearch.map((user) => (
                             <li key={user.id} className="flex items-center gap-4 border-b border-gray-200 pb-4">
-                                <img src={user.profile_image} alt={user.username} className="h-24 w-20 rounded-lg shadow-md"/>
+                                <img src={user.profile_image} alt={user.username}
+                                     className="h-24 w-20 rounded-lg shadow-md"/>
                                 <div>
-                                    <a className="text-lg font-semibold text-indigo-600 hover:underline" href={`/profile-all/${user.id}`}>
+                                    <a className="text-lg font-semibold text-indigo-600 hover:underline"
+                                       href={`/profile/${user.user_id}`}>
                                         {user.username}
                                     </a>
                                 </div>
+                                <button className="p-2 bg-green-500 rounded"
+                                        onClick={() => AddFriend(user.user_id)}>Add
+                                </button>
                             </li>
                         ))}</ul>
                     </div>
@@ -116,10 +196,11 @@ function Profile() {
                 {/* Profile Information Section */}
                 <div className="bg-white text-gray-800 rounded-lg shadow-lg p-6 md:w-1/2 max-h-fit">
                     <div className="flex flex-col items-center">
-                        <img src={pfp} alt="profile" className="rounded-full w-32 h-32 object-cover mb-4 shadow-lg" />
+                        <img src={pfp} alt="profile" className="rounded-full w-32 h-32 object-cover mb-4 shadow-lg"/>
                         <h2 className="font-bold text-2xl"><span className="text-indigo-600">{nickname}</span></h2>
                         <p className="text-lg mt-4"><span className="text-gray-600">{bio}</span></p>
-                        <a href="/profile-edit" className="bg-indigo-600 hover:bg-indigo-500 text-white py-2 px-4 rounded-full mt-6 shadow-lg transition duration-300">
+                        <a href="/profile-edit"
+                           className="bg-indigo-600 hover:bg-indigo-500 text-white py-2 px-4 rounded-full mt-6 shadow-lg transition duration-300">
                             Edit Profile
                         </a>
                     </div>
@@ -130,9 +211,12 @@ function Profile() {
                     <ul className="space-y-4">
                         {recentAnime.map((anime) => (
                             <li key={anime.mal_id} className="flex items-center gap-4 border-b border-gray-200 pb-4">
-                                <img src={anime.image_url} alt={anime.title} className="h-24 w-20 rounded-lg shadow-md"/>
+                                <img src={anime.image_url} alt={anime.title}
+                                     className="h-24 w-20 rounded-lg shadow-md"/>
                                 <div>
-                                    <a className="text-lg font-semibold text-indigo-600 hover:underline" href={`https://myanimelist.net/anime/${anime.mal_id}`} target="_blank" rel="noopener noreferrer">
+                                    <a className="text-lg font-semibold text-indigo-600 hover:underline"
+                                       href={`https://myanimelist.net/anime/${anime.mal_id}`} target="_blank"
+                                       rel="noopener noreferrer">
                                         {anime.title}
                                     </a>
                                 </div>
@@ -143,29 +227,46 @@ function Profile() {
 
                 <div className="bg-white rounded-lg shadow-lg p-6 md:w-1/2">
                     <p className="text-black text-center font-semibold">Friends</p>
-                    <ul>{AllUsers.map((user) => (
-                        <li key={user.id} className="flex items-center gap-4 border-b border-gray-200 pb-4">
-                            <img src={user.profile_image} alt={user.username} className="h-24 w-20 rounded-lg shadow-md"/>
-                            <div>
-                                <a className="text-lg font-semibold text-indigo-600 hover:underline" href={`/user/${user.id}`}>
-                                    {user.username}
-                                </a>
-                            </div>
-                        </li>
-                    ))}</ul>
+                    <ul>
+                        {friends.map((friend) => (
+                            <li key={friend.id} className="flex items-center gap-4 border-b border-gray-200 pb-4">
+                                <img src={friend.profile_image} alt={friend.username}
+                                     className="h-24 w-20 rounded-lg shadow-md"/>
+                                <div>
+                                    <a className="text-lg font-semibold text-indigo-600 hover:underline"
+                                       href={`/profile/${friend.id}`}>
+                                        {friend.username}
+                                    </a>
+                                </div>
+                            </li>
+                        ))}
+                    </ul>
                 </div>
                 <div className="bg-white rounded-lg shadow-lg p-6 md:w-1/2">
                     <p className="text-black text-center font-semibold">Following</p>
-                    <ul>{AllUsers.map((user) => (
-                        <li key={user.id} className="flex items-center gap-4 border-b border-gray-200 pb-4">
-                            <img src={user.profile_image} alt={user.username} className="h-24 w-20 rounded-lg shadow-md"/>
-                            <div>
-                                <a className="text-lg font-semibold text-indigo-600 hover:underline" href={`/user/${user.id}`}>
-                                    {user.username}
-                                </a>
-                            </div>
-                        </li>
-                    ))}</ul>
+                </div>
+                <div className="bg-white rounded-lg shadow-lg p-6 md:w-1/2">
+                    <p className="text-black font-semibold text-center">Requests</p>
+                    <ul>
+                        {requestProfiles.map((user, index) => (
+                            <li key={user.id} className="flex items-center gap-4 border-b border-gray-200 pb-4">
+                                <img src={user.profile_image} alt={user.username}
+                                     className="h-24 w-20 rounded-lg shadow-md"/>
+                                <div>
+                                    <a className="text-lg font-semibold text-indigo-600 hover:underline"
+                                       href={`/profile/${user.id}`}>
+                                        {user.username}
+                                    </a>
+                                    <button
+                                        className="rounded p-2 text-black bg-red-200 ml-2"
+                                        onClick={() => AcceptFriend(friendRequests[index].id)}
+                                    >
+                                        Accept
+                                    </button>
+                                </div>
+                            </li>
+                        ))}
+                    </ul>
                 </div>
             </div>
         </div>

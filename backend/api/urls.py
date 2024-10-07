@@ -37,6 +37,13 @@ urlpatterns = [
     path('user/profile/<int:id>/update/', views.UserProfileUpdateView.as_view(), name='user_profile_update'),
     path('all/users/', views.AllUsersView.as_view(), name='all-users'),
 
+    #FRIENDS
+    path('user/friends/', views.FriendListView.as_view(), name='friends'),
+    path('user/friends/add/<int:friendId>/', views.FriendRequestView.as_view(), name='add-friend'),
+    path('user/friends/requests/', views.FriendRequestView.as_view(), name='friend-requests'),
+    path('user/friend-request/accept/<int:request_id>/', views.AcceptFriendRequestView.as_view(), name='accept-friend-request'),
+    path('user/friend-request/accept/', views.AcceptFriendRequestView.as_view(), name='accept-friend-request'),
+
 
 ]
 
