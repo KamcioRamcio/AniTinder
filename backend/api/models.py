@@ -115,11 +115,42 @@ class FriendRequest(models.Model):
         self.save()
         return True
 
+class Follow(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='follower', null=True)
+    following = models.ForeignKey(User, on_delete=models.CASCADE, related_name='following', null=True)
+    timestamp = models.DateTimeField(auto_now_add=True, null=True)
+
+    def __str__(self):
+        return self.user.username
+
+    def follow(self):
+        user = self.user
+        following = self.following
+        user_profile = Profile.objects.get(user=user)
+        following_profile = Profile.objects.get(user=following)
+        user_profile.following.add(following)
+        following_profile.followers.add(user)
+        return True
+
+    def unfollow(self):
+        user = self.user
+        following = self.following
+        user_profile = Profile.objects.get(user=user)
+        following_profile = Profile.objects.get(user=following)
+        user_profile.following.remove(following)
+        following_profile.followers.remove(user)
+        return True
+
+
+class Followers(models.Model):
+    pass
+
+
 class Profile(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
     username = models.CharField(max_length=150)
     bio = models.TextField(default='No bio')
-    profile_image = models.ImageField(upload_to='profile_images/', null=True, blank=True)
+    profile_image = models.ImageField(upload_to='profile_images/', null=True, blank=True, default='profile_images/pfp1_CMiXTdg.jpg')
 
     def __str__(self):
         return self.user

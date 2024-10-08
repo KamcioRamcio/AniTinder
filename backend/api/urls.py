@@ -39,11 +39,17 @@ urlpatterns = [
 
     #FRIENDS
     path('user/friends/', views.FriendListView.as_view(), name='friends'),
+    path('user/friends/<int:id>/', views.FriendListByIdView.as_view(), name='friends-by-id'),
     path('user/friends/add/<int:friendId>/', views.FriendRequestView.as_view(), name='add-friend'),
     path('user/friends/requests/', views.FriendRequestView.as_view(), name='friend-requests'),
-    path('user/friend-request/accept/<int:request_id>/', views.AcceptFriendRequestView.as_view(), name='accept-friend-request'),
     path('user/friend-request/accept/', views.AcceptFriendRequestView.as_view(), name='accept-friend-request'),
+    path('user/friends/unfriend/', views.UnfriendView.as_view(), name='unfriend'),
 
+    #FOLLOW
+    path('user/follow/<int:id>/', views.FollowingView.as_view(), name='follow-user'),
+    #path('user/unfollow/<int:id>', views.FollowingView.as_view(), name='follow'),
+    #path('user/followers/<int:id>', views.FollowersView.as_view(), name='followers'),
+    #path('user/following/<int:id>', views.FollowView.as_view(), name='following'),
 
 ]
 

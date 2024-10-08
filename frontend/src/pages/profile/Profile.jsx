@@ -1,13 +1,6 @@
 import api from "../../api.js";
 import React, {useEffect, useState} from "react";
 
-/* TODO
-    - Create a Profile page that displays the user's information
-    - Add add_time to user_anime_list to allow to show recently added anime
-    - Add a button to edit user information
-    - Add user friends and follow list
-*/
-
 function Profile() {
     const [bio, setBio] = useState('');
     const [pfp, setPfp] = useState('');
@@ -17,6 +10,7 @@ function Profile() {
     const [friendRequests, setFriendRequests] = useState([]);
     const [requestProfiles, setRequestProfiles] = useState([]);
     const [friends, setFriends] = useState([]);
+    const [friendProfiles, setFriendProfiles] = useState([]);
     const id = localStorage.getItem('user_id');
 
     const [allUsers, setAllUsers] = useState([]);
@@ -26,7 +20,7 @@ function Profile() {
         fetchUserProfile();
         fetchAllUsers();
         fetchFriendRequests();
-        fetchUserFriends()
+        fetchUserFriends();
     }, []);
 
     const fetchRecentAnime = async () => {
@@ -66,12 +60,12 @@ function Profile() {
         try {
             const response = await api.get(`/user/friends/requests/`);
             if (response.status === 200) {
-                const friendRequests = response.data;
+                const friendRequests = response.data.filter(request => request.is_active);
                 setFriendRequests(friendRequests);
 
                 const profiles = await Promise.all(friendRequests.map(async (request) => {
                     if (request.sender) {
-                        const profileResponse = await api.get(`/user/profile/${request.sender}/`); // Use sender ID here
+                        const profileResponse = await api.get(`/user/profile/${request.sender}/`);
                         return profileResponse.data;
                     } else {
                         console.error("sender_id is undefined for request:", request);
@@ -88,8 +82,6 @@ function Profile() {
             console.error("There was an error fetching friend requests!", error);
         }
     };
-
-
     const fetchAllUsers = async () => {
         const response = await api.get(`/all/users/`);
         if (response.status === 200) {
@@ -115,19 +107,33 @@ function Profile() {
     const fetchUserFriends = async () => {
         const response = await api.get(`/user/friends/`);
         if (response.status === 200) {
-            setFriends(response.data);
+            const friendIds = response.data[0].friends.map(friend => friend.id);
+            setFriends(friendIds);
+            fetchFriendProfiles(friendIds);
         } else {
             console.log("Error fetching user friends");
         }
-    }
+    };
+
+    const fetchFriendProfiles = async (friendIds) => {
+        try {
+            const profiles = await Promise.all(friendIds.map(async (friendId) => {
+                const response = await api.get(`/user/profile/${friendId}/`);
+                return response.data;
+            }));
+            setFriendProfiles(profiles);
+        } catch (error) {
+            console.error("There was an error fetching friend profiles!", error);
+        }
+    };
 
     const AcceptFriend = async (request_id) => {
-        console.log("Request ID being sent:", request_id); // Add this log
+        console.log("Request ID being sent:", request_id);
         try {
-            const response = await api.post(`/user/friend-request/accept/`, { request_id }); // Send request_id in body
+            const response = await api.post(`/user/friend-request/accept/`, { request_id });
             if (response.status === 200) {
                 console.log(response.data);
-                fetchFriendRequests(); // Refresh list after acceptance
+                fetchFriendRequests();
                 fetchUserFriends();
             } else {
                 console.log("Error accepting friend");
@@ -137,6 +143,33 @@ function Profile() {
         }
     };
 
+    const Unfriend = async (friendId) => {
+        console.log("Friend ID being sent:", friendId);
+        try {
+            const response = await api.post(`/user/friends/unfriend/`, { friend_id: friendId });
+            if (response.status === 200) {
+                console.log(response.data);
+                CheckUsers();
+            } else {
+                console.log("Error unfriending friend");
+            }
+        } catch (error) {
+            console.error("There was an error unfriending the friend!", error);
+        }
+    }
+
+    const FollowUser = async (userId) => {
+        try {
+            const response = await api.post(`/user/follow/${userId}/`);
+            if (response.status === 200) {
+                console.log(response.data);
+            } else {
+                console.log("Error following user");
+            }
+        } catch (error) {
+            console.error("There was an error following the user!", error);
+        }
+    }
 
     const CheckUsers = () => {
         if (allUsers.some(user => user.username === nickname)) {
@@ -158,13 +191,11 @@ function Profile() {
                 <h2 className="font-bold text-3xl">Profile</h2>
             </header>
             <div className="flex flex-col md:flex-row w-full mx-auto gap-6 p-6">
-                {/* Back */}
                 <div className="absolute top-8 left-8 flex justify-evenly">
                     <a className="bg-green-500 p-2 rounded" href="/home">Back</a>
                     <button className="bg-red-500 p-2 rounded mx-4" onClick={handleLogout}>Logout</button>
                 </div>
 
-                {/* Search Bar in the Right Corner */}
                 <div className="absolute top-8 right-8 w-1/3 md:w-1/4">
                     <input
                         type="text"
@@ -193,7 +224,6 @@ function Profile() {
                     </div>
                 )}
 
-                {/* Profile Information Section */}
                 <div className="bg-white text-gray-800 rounded-lg shadow-lg p-6 md:w-1/2 max-h-fit">
                     <div className="flex flex-col items-center">
                         <img src={pfp} alt="profile" className="rounded-full w-32 h-32 object-cover mb-4 shadow-lg"/>
@@ -205,7 +235,7 @@ function Profile() {
                         </a>
                     </div>
                 </div>
-                {/* Recently Added Anime Section */}
+
                 <div className="bg-white rounded-lg shadow-lg p-6 md:w-1/2">
                     <p className="text-center font-bold text-xl mb-4 text-gray-800">Recently Added</p>
                     <ul className="space-y-4">
@@ -228,23 +258,26 @@ function Profile() {
                 <div className="bg-white rounded-lg shadow-lg p-6 md:w-1/2">
                     <p className="text-black text-center font-semibold">Friends</p>
                     <ul>
-                        {friends.map((friend) => (
+                        {friendProfiles.map((friend) => (
                             <li key={friend.id} className="flex items-center gap-4 border-b border-gray-200 pb-4">
                                 <img src={friend.profile_image} alt={friend.username}
                                      className="h-24 w-20 rounded-lg shadow-md"/>
                                 <div>
                                     <a className="text-lg font-semibold text-indigo-600 hover:underline"
-                                       href={`/profile/${friend.id}`}>
+                                       href={`/profile/${friend.user_id}`}>
                                         {friend.username}
                                     </a>
                                 </div>
+                                <button className="p-2 text-black bg-red-500 rounded" onClick={() => Unfriend(friend.user_id)}>Unfriend</button>
                             </li>
                         ))}
                     </ul>
                 </div>
+
                 <div className="bg-white rounded-lg shadow-lg p-6 md:w-1/2">
                     <p className="text-black text-center font-semibold">Following</p>
                 </div>
+
                 <div className="bg-white rounded-lg shadow-lg p-6 md:w-1/2">
                     <p className="text-black font-semibold text-center">Requests</p>
                     <ul>
@@ -254,7 +287,7 @@ function Profile() {
                                      className="h-24 w-20 rounded-lg shadow-md"/>
                                 <div>
                                     <a className="text-lg font-semibold text-indigo-600 hover:underline"
-                                       href={`/profile/${user.id}`}>
+                                       href={`/profile/${user.user_id}`}>
                                         {user.username}
                                     </a>
                                     <button

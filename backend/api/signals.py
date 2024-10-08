@@ -3,6 +3,7 @@ from django.dispatch import receiver
 from django.contrib.auth.models import User
 from .models import FriendList
 
+
 @receiver(post_save, sender=User)
 def create_friend_list(sender, instance, created, **kwargs):
     if created:

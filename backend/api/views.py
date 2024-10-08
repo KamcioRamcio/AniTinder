@@ -13,11 +13,11 @@ from rest_framework.exceptions import NotFound
 
 
 from .models import Genre, Anime, UserAnimeList, TempDeletedAnime, AnimeQuotes, Profile, \
-    FriendRequest, FriendList
+    FriendRequest, FriendList, Follow
 
 from .serializers import UserSerializer, GenreSerializer, AnimeSerializer, UserAnimeSerializer, \
-    TempDeletedAnimeSerializer, QuoteSerializer, ProfileSerializer, AllUsersSerializer, FriendRequestSerializer,\
-    FriendRequestAcceptSerializer
+    TempDeletedAnimeSerializer, QuoteSerializer, ProfileSerializer, AllUsersSerializer, FriendRequestSerializer, \
+    FriendRequestAcceptDeclineSerializer, FriendListSerializer, UnfriendSerializer, FollowSerializer
 
 
 # Create your views here.
@@ -216,7 +216,7 @@ class AcceptFriendRequestView(APIView):
     permission_classes = [IsAuthenticated]
 
     def post(self, request, *args, **kwargs):
-        serializer = FriendRequestAcceptSerializer(data=request.data, context={'request': request})
+        serializer = FriendRequestAcceptDeclineSerializer(data=request.data, context={'request': request})
         if serializer.is_valid():
             success = serializer.accept()
             if success:
@@ -224,11 +224,24 @@ class AcceptFriendRequestView(APIView):
             return Response({'error': 'Unable to accept friend request'}, status=status.HTTP_400_BAD_REQUEST)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
+class DeclineFriendRequestView(APIView):
+    pass
 
+class UnfriendView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, *args, **kwargs):
+        serializer = UnfriendSerializer(data=request.data, context={'request': request})
+        if serializer.is_valid():
+            success = serializer.unfriend()
+            if success:
+                return Response({'message': 'Friend removed'}, status=status.HTTP_200_OK)
+            return Response({'error': 'Unable to remove friend'}, status=status.HTTP_400_BAD_REQUEST)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 class FriendListView(generics.ListCreateAPIView):
-    serializer_class = UserSerializer
-    permission_classes = [IsAuthenticated]
+    serializer_class = FriendListSerializer
+    permission_classes = [AllowAny]
 
     def get_queryset(self):
         user = self.request.user
@@ -236,3 +249,37 @@ class FriendListView(generics.ListCreateAPIView):
             return FriendList.objects.filter(user_id=user)
         except FriendList.DoesNotExist:
             raise NotFound("Friend list not found")
+
+class FriendListByIdView(generics.ListCreateAPIView):
+    serializer_class = FriendListSerializer
+    permission_classes = [AllowAny]
+
+    def get_queryset(self):
+        id = self.kwargs.get('id')
+        try:
+            user = User.objects.get(id=id)
+            return FriendList.objects.filter(user_id=user)
+        except User.DoesNotExist:
+            raise NotFound("User not found")
+        except FriendList.DoesNotExist:
+            raise NotFound("Friend list not found")
+
+class FollowingView(generics.ListCreateAPIView):
+    serializer_class = FollowSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        user = self.request.user
+        return Follow.objects.filter(user=user)
+
+    def post(self, request, *args, **kwargs):
+        user_id = kwargs.get('id')  # Correctly fetch the 'id' from URL parameters
+        try:
+            user_to_follow = User.objects.get(id=user_id)
+            follow, created = Follow.objects.get_or_create(user=request.user, following=user_to_follow)
+            if created:
+                return Response({'message': 'User followed successfully'}, status=status.HTTP_201_CREATED)
+            else:
+                return Response({'message': 'You are already following this user'}, status=status.HTTP_200_OK)
+        except User.DoesNotExist:
+            raise NotFound("User not found")
