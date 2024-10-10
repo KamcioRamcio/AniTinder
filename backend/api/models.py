@@ -58,8 +58,8 @@ class AnimeQuotes(models.Model):
         return self.quote
 
 class FriendList(models.Model):
-    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='user')
-    friends = models.ManyToManyField(User, related_name='friends', blank=True)
+    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='friend_list')
+    friends = models.ManyToManyField(User, related_name='friend_lists', blank=True)
 
     def __str__(self):
         return self.user.username
@@ -75,15 +75,14 @@ class FriendList(models.Model):
             self.save()
 
     def unfriend(self, removee):
-        remover = self
-        remover.remove_friend(removee)
-        removee.remove_friend(remover)
+        # Remove friend from both users' friend lists
+        self.remove_friend(removee)
+        friend_friend_list = FriendList.objects.get(user=removee)
+        friend_friend_list.remove_friend(self.user)
         return True
 
     def is_mutual_friend(self, friend):
-        if friend in self.friends.all():
-            return True
-        return False
+        return friend in self.friends.all()
 
 class FriendRequest(models.Model):
     sender = models.ForeignKey(User, on_delete=models.CASCADE, related_name='sender')
@@ -116,35 +115,28 @@ class FriendRequest(models.Model):
         return True
 
 class Follow(models.Model):
-    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='follower', null=True)
-    following = models.ForeignKey(User, on_delete=models.CASCADE, related_name='following', null=True)
-    timestamp = models.DateTimeField(auto_now_add=True, null=True)
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='following_users')
+    following = models.ManyToManyField(User, related_name='followers', blank=True)
+
 
     def __str__(self):
-        return self.user.username
+        return f"{self.user.username} follows {self.following.count()} users"
 
-    def follow(self):
-        user = self.user
-        following = self.following
-        user_profile = Profile.objects.get(user=user)
-        following_profile = Profile.objects.get(user=following)
-        user_profile.following.add(following)
-        following_profile.followers.add(user)
-        return True
+    def add_following(self, account):
+        if not self.is_following(account):
+            self.following.add(account)
+            self.save()
 
-    def unfollow(self):
-        user = self.user
-        following = self.following
-        user_profile = Profile.objects.get(user=user)
-        following_profile = Profile.objects.get(user=following)
-        user_profile.following.remove(following)
-        following_profile.followers.remove(user)
-        return True
+    def remove_following(self, account):
+        if self.is_following(account):
+            self.following.remove(account)
+            self.save()
 
+    def is_following(self, account):
+        return self.following.filter(id=account.id).exists()
 
-class Followers(models.Model):
-    pass
-
+    def followers_count(self):
+        return self.following.count()
 
 class Profile(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
