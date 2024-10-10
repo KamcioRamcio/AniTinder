@@ -9,7 +9,7 @@ from rest_framework import status
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from rest_framework.exceptions import NotFound
+from rest_framework.exceptions import ValidationError, NotFound
 
 
 from .models import Genre, Anime, UserAnimeList, TempDeletedAnime, AnimeQuotes, Profile, \
@@ -17,7 +17,8 @@ from .models import Genre, Anime, UserAnimeList, TempDeletedAnime, AnimeQuotes, 
 
 from .serializers import UserSerializer, GenreSerializer, AnimeSerializer, UserAnimeSerializer, \
     TempDeletedAnimeSerializer, QuoteSerializer, ProfileSerializer, AllUsersSerializer, FriendRequestSerializer, \
-    FriendRequestAcceptDeclineSerializer, FriendListSerializer, UnfriendSerializer, FollowSerializer
+    FriendRequestAcceptDeclineSerializer, FriendListSerializer, UnfriendSerializer, FollowListSerializer,\
+    FollowersListSerializer
 
 
 # Create your views here.
@@ -205,11 +206,20 @@ class FriendRequestView(generics.ListCreateAPIView):
 
     def perform_create(self, serializer):
         friend_id = self.kwargs.get('friendId')
+        user = self.request.user
+
+        if user.id == friend_id:
+            raise ValidationError("You cannot send a friend request to yourself.")
+
         try:
             friend = User.objects.get(id=friend_id)
-            serializer.save(sender=self.request.user, receiver=friend)
         except User.DoesNotExist:
             raise NotFound("User not found")
+
+        if FriendRequest.objects.filter(sender=user, receiver=friend).exists():
+            raise ValidationError("Friend request already sent.")
+
+        serializer.save(sender=user, receiver=friend)
 
 
 class AcceptFriendRequestView(APIView):
@@ -225,19 +235,35 @@ class AcceptFriendRequestView(APIView):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 class DeclineFriendRequestView(APIView):
-    pass
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, *args, **kwargs):
+        serializer = FriendRequestAcceptDeclineSerializer(data=request.data, context={'request': request})
+        if serializer.is_valid():
+            success = serializer.decline()
+            if success:
+                return Response({'message': 'Friend request declined'}, status=status.HTTP_200_OK)
+            return Response({'error': 'Unable to decline friend request'}, status=status.HTTP_400_BAD_REQUEST)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 class UnfriendView(APIView):
     permission_classes = [IsAuthenticated]
 
     def post(self, request, *args, **kwargs):
-        serializer = UnfriendSerializer(data=request.data, context={'request': request})
-        if serializer.is_valid():
-            success = serializer.unfriend()
-            if success:
-                return Response({'message': 'Friend removed'}, status=status.HTTP_200_OK)
-            return Response({'error': 'Unable to remove friend'}, status=status.HTTP_400_BAD_REQUEST)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        user = request.user
+        user_id = self.kwargs.get('user_id')
+        try:
+            friend = User.objects.get(id=user_id)
+            friend_list = FriendList.objects.get(user_id=user)
+            friend_list.remove_friend(friend)
+            friend_friend_list = FriendList.objects.get(user=friend)
+            friend_friend_list.remove_friend(user)
+
+            return Response({'message': 'Unfriended successfully'}, status=status.HTTP_200_OK)
+        except User.DoesNotExist:
+            return Response({'error': 'User not found'}, status=status.HTTP_404_NOT_FOUND)
+        except FriendList.DoesNotExist:
+            return Response({'error': 'Friend list not found'}, status=status.HTTP_404_NOT_FOUND)
 
 class FriendListView(generics.ListCreateAPIView):
     serializer_class = FriendListSerializer
@@ -264,22 +290,81 @@ class FriendListByIdView(generics.ListCreateAPIView):
         except FriendList.DoesNotExist:
             raise NotFound("Friend list not found")
 
-class FollowingView(generics.ListCreateAPIView):
-    serializer_class = FollowSerializer
+
+class FollowUserView(APIView):
     permission_classes = [IsAuthenticated]
 
-    def get_queryset(self):
-        user = self.request.user
-        return Follow.objects.filter(user=user)
+    def post(self, request, *args, **kwargs):
+        user = request.user  # Authenticated user making the request
+        user_to_follow_id = self.kwargs.get('user_id')  # Extract user_id from the URL path
+
+        if not user_to_follow_id:
+            return Response({'error': 'User ID is required'}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            user_to_follow = User.objects.get(id=user_to_follow_id)  # Get the user to follow
+        except User.DoesNotExist:
+            return Response({'error': f'User with ID {user_to_follow_id} not found'}, status=status.HTTP_404_NOT_FOUND)
+
+        # Get or create the Follow instance for the current user
+        follow_instance, created = Follow.objects.get_or_create(user=user)  # Ensure user is passed
+
+        # Check if the user is already following the target user
+        if follow_instance.is_following(user_to_follow):
+            return Response({'message': 'You are already following this user.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Add the user to the following list
+        follow_instance.add_following(user_to_follow)
+        return Response({'message': 'User followed successfully'}, status=status.HTTP_200_OK)
+
+
+class UnfollowUserView(APIView):
+    permission_classes = [IsAuthenticated]
 
     def post(self, request, *args, **kwargs):
-        user_id = kwargs.get('id')  # Correctly fetch the 'id' from URL parameters
+        user = request.user
+        user_to_unfollow_id = self.kwargs.get('user_id')
+
+        if not user_to_unfollow_id:
+            return Response({'error': 'User ID is required'}, status=status.HTTP_400_BAD_REQUEST)
+
         try:
-            user_to_follow = User.objects.get(id=user_id)
-            follow, created = Follow.objects.get_or_create(user=request.user, following=user_to_follow)
-            if created:
-                return Response({'message': 'User followed successfully'}, status=status.HTTP_201_CREATED)
-            else:
-                return Response({'message': 'You are already following this user'}, status=status.HTTP_200_OK)
+            user_to_unfollow = User.objects.get(id=user_to_unfollow_id)
+        except User.DoesNotExist:
+            return Response({'error': 'User not found'}, status=status.HTTP_404_NOT_FOUND)
+
+        follow_instance = Follow.objects.get(user=user)
+
+        if not follow_instance.is_following(user_to_unfollow):
+            return Response({'message': 'Not following this user'}, status=status.HTTP_400_BAD_REQUEST)
+
+        follow_instance.remove_following(user_to_unfollow)
+        return Response({'message': 'Unfollowed successfully'}, status=status.HTTP_200_OK)
+
+class FollowingListByIdView(generics.ListCreateAPIView):
+    serializer_class = FollowListSerializer
+    permission_classes = [AllowAny]
+
+    def get_queryset(self):
+        id = self.kwargs.get('id')
+        try:
+            user = User.objects.get(id=id)
+            return Follow.objects.filter(user=user)
         except User.DoesNotExist:
             raise NotFound("User not found")
+        except Follow.DoesNotExist:
+            raise NotFound("Follow list not found")
+
+class FollowersListByIdView(generics.ListCreateAPIView):
+    serializer_class = FollowersListSerializer
+    permission_classes = [AllowAny]
+
+    def get_queryset(self):
+        id = self.kwargs.get('id')
+        try:
+            user = User.objects.get(id=id)
+            return Follow.objects.filter(following=user)
+        except User.DoesNotExist:
+            raise NotFound("User not found")
+        except Follow.DoesNotExist:
+            raise NotFound("Follow list not found")

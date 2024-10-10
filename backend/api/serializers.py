@@ -75,6 +75,9 @@ class FriendRequestSerializer(serializers.ModelSerializer):
         extra_kwargs = {'sender': {'read_only': True}, 'receiver': {'read_only': True}}
 
 
+from rest_framework import serializers
+from .models import FriendRequest
+
 class FriendRequestAcceptDeclineSerializer(serializers.Serializer):
     request_id = serializers.IntegerField()
 
@@ -105,6 +108,7 @@ class FriendRequestAcceptDeclineSerializer(serializers.Serializer):
         except FriendRequest.DoesNotExist:
             return False
 
+
 class UnfriendSerializer(serializers.Serializer):
     friend_id = serializers.IntegerField()
 
@@ -126,11 +130,15 @@ class UnfriendSerializer(serializers.Serializer):
             friend = User.objects.get(id=friend_id)
             user_friend_list = FriendList.objects.get(user=user)
             friend_friend_list = FriendList.objects.get(user=friend)
-            user_friend_list.remove_friend(friend)
-            friend_friend_list.remove_friend(user)
-            return True
+
+            # Ensure both users are in each other's friend lists before unfriending
+            if user_friend_list.is_mutual_friend(friend) and friend_friend_list.is_mutual_friend(user):
+                user_friend_list.unfriend(friend)
+                return True
+            else:
+                raise serializers.ValidationError("You are not friends.")
         except (User.DoesNotExist, FriendList.DoesNotExist):
-            return False
+            raise serializers.ValidationError("Friend or friend list not found.")
 
 class FriendUserSerializer(serializers.ModelSerializer):
     class Meta:
@@ -146,10 +154,27 @@ class FriendListSerializer(serializers.ModelSerializer):
         model = FriendList
         fields = ['user', 'friends']
 
-class FollowSerializer(serializers.ModelSerializer):
-    user = serializers.CharField(source='user.username', read_only=True)
-    following = serializers.CharField(source='following.username', read_only=True)
+
+class FollowUserSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = ['id', 'username']
+
+
+class FollowListSerializer(serializers.ModelSerializer):
+    username = serializers.CharField(source='user.username', read_only=True)
+    following = FollowUserSerializer(many=True, read_only=True)
 
     class Meta:
         model = Follow
-        fields = ['id','user', 'following']
+        fields = ['username', 'user_id', 'following']
+
+class FollowersListSerializer(serializers.ModelSerializer):
+    username = serializers.CharField(source='user.username', read_only=True)
+    followers = FollowUserSerializer(many=True, read_only=True)
+
+    class Meta:
+        model = Follow
+        fields = ['username', 'followers', 'user_id']
+
+

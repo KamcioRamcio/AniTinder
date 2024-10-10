@@ -43,13 +43,13 @@ urlpatterns = [
     path('user/friends/add/<int:friendId>/', views.FriendRequestView.as_view(), name='add-friend'),
     path('user/friends/requests/', views.FriendRequestView.as_view(), name='friend-requests'),
     path('user/friend-request/accept/', views.AcceptFriendRequestView.as_view(), name='accept-friend-request'),
-    path('user/friends/unfriend/', views.UnfriendView.as_view(), name='unfriend'),
+    path('user/friend-request/deny/', views.DeclineFriendRequestView.as_view(), name='deny-friend-request'),
+    path('user/friends/unfriend/<int:user_id>/', views.UnfriendView.as_view(), name='unfriend'),
 
     #FOLLOW
-    path('user/follow/<int:id>/', views.FollowingView.as_view(), name='follow-user'),
-    #path('user/unfollow/<int:id>', views.FollowingView.as_view(), name='follow'),
-    #path('user/followers/<int:id>', views.FollowersView.as_view(), name='followers'),
-    #path('user/following/<int:id>', views.FollowView.as_view(), name='following'),
-
+    path('user/follow/<int:user_id>/', views.FollowUserView.as_view(), name='follow-user'),
+    path('user/unfollow/<int:user_id>/', views.UnfollowUserView.as_view(), name='unfollow-user'),
+    path('user/followers/<int:id>/', views.FollowersListByIdView.as_view(), name='followers'),
+    path('user/following/<int:id>/', views.FollowingListByIdView.as_view(), name='following'),
 ]
 
