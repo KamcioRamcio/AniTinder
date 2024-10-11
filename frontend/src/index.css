@@ -8,3 +8,19 @@
   font-weight: 400;
   font-style: normal;
 }
+
+.primary_bg {
+  background-color: #fdf0d5;
+}
+
+.primary_text {
+  color: #c1121f;
+}
+
+.primary_border {
+  background-color: #780000;
+}
+
+.primary_form_bg {
+  background-color: #669bbc;
+}

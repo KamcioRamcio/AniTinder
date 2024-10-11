@@ -1,7 +1,5 @@
-from rest_framework import serializers
 from django.contrib.auth.models import User
-from django.core.exceptions import ObjectDoesNotExist
-
+from rest_framework import serializers
 
 from .models import Genre, Anime, UserAnimeList, TempDeletedAnime, AnimeQuotes, Profile, FriendRequest, \
     FriendList, Follow
@@ -26,8 +24,7 @@ class UserSerializer(serializers.ModelSerializer):
 class ProfileSerializer(serializers.ModelSerializer):
     class Meta:
         model = Profile
-        fields = ['id', 'username','bio', 'profile_image', 'user_id']
-
+        fields = ['id', 'username', 'bio', 'profile_image', 'user_id', 'anime_list_public']
 
 
 class GenreSerializer(serializers.ModelSerializer):
@@ -36,16 +33,21 @@ class GenreSerializer(serializers.ModelSerializer):
         fields = ['id', 'author', 'name']
         extra_kwargs = {'author': {'read_only': True}}
 
+
 class AnimeSerializer(serializers.ModelSerializer):
     genres = GenreSerializer(many=True)
+
     class Meta:
         model = Anime
-        fields = ['id', 'title', 'genres', 'score', 'episodes', 'year', 'image_url', 'synopsis', 'trailer_url', 'mal_id']
+        fields = ['id', 'title', 'genres', 'score', 'episodes', 'year', 'image_url', 'synopsis', 'trailer_url',
+                  'mal_id']
+
 
 class QuoteSerializer(serializers.ModelSerializer):
     class Meta:
         model = AnimeQuotes
         fields = ['id', 'anime', 'character', 'quote']
+
 
 class UserAnimeSerializer(serializers.ModelSerializer):
     username = serializers.CharField(source='author.username', read_only=True)
@@ -56,17 +58,18 @@ class UserAnimeSerializer(serializers.ModelSerializer):
         extra_kwargs = {'author': {'read_only': True}}
 
 
-
 class TempDeletedAnimeSerializer(serializers.ModelSerializer):
     class Meta:
         model = TempDeletedAnime
         fields = ['id', 'author', 'title', 'mal_id']
         extra_kwargs = {'author': {'read_only': True}}
 
+
 class AllUsersSerializer(serializers.ModelSerializer):
     class Meta:
         model = Profile
         fields = ['id', 'username', 'profile_image', 'user_id']
+
 
 class FriendRequestSerializer(serializers.ModelSerializer):
     class Meta:
@@ -77,6 +80,7 @@ class FriendRequestSerializer(serializers.ModelSerializer):
 
 from rest_framework import serializers
 from .models import FriendRequest
+
 
 class FriendRequestAcceptDeclineSerializer(serializers.Serializer):
     request_id = serializers.IntegerField()
@@ -140,6 +144,7 @@ class UnfriendSerializer(serializers.Serializer):
         except (User.DoesNotExist, FriendList.DoesNotExist):
             raise serializers.ValidationError("Friend or friend list not found.")
 
+
 class FriendUserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
@@ -169,6 +174,7 @@ class FollowListSerializer(serializers.ModelSerializer):
         model = Follow
         fields = ['username', 'user_id', 'following']
 
+
 class FollowersListSerializer(serializers.ModelSerializer):
     username = serializers.CharField(source='user.username', read_only=True)
     followers = FollowUserSerializer(many=True, read_only=True)
@@ -176,5 +182,3 @@ class FollowersListSerializer(serializers.ModelSerializer):
     class Meta:
         model = Follow
         fields = ['username', 'followers', 'user_id']
-
-

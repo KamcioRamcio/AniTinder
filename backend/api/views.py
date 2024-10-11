@@ -1,23 +1,22 @@
 import json
 import os
-#eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzI4MzE0MTAwLCJpYXQiOjE3MjgzMTIzMDAsImp0aSI6ImY5ZjI0YmQ2OTNhODQ1ZGFhNDc1NjYyMWIyYTcyYTkxIiwidXNlcl9pZCI6MX0.b7NCYAnvPoMuGuxeMoNfprajbOa6cgI38cBg-fkIYsc
+
+# eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzI4MzE0MTAwLCJpYXQiOjE3MjgzMTIzMDAsImp0aSI6ImY5ZjI0YmQ2OTNhODQ1ZGFhNDc1NjYyMWIyYTcyYTkxIiwidXNlcl9pZCI6MX0.b7NCYAnvPoMuGuxeMoNfprajbOa6cgI38cBg-fkIYsc
 from django.contrib.auth.models import User
 from django.db.models.functions import Lower, Substr
 from django.http import JsonResponse
 from rest_framework import generics
 from rest_framework import status
+from rest_framework.exceptions import ValidationError, NotFound
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from rest_framework.exceptions import ValidationError, NotFound
-
 
 from .models import Genre, Anime, UserAnimeList, TempDeletedAnime, AnimeQuotes, Profile, \
     FriendRequest, FriendList, Follow
-
 from .serializers import UserSerializer, GenreSerializer, AnimeSerializer, UserAnimeSerializer, \
     TempDeletedAnimeSerializer, QuoteSerializer, ProfileSerializer, AllUsersSerializer, FriendRequestSerializer, \
-    FriendRequestAcceptDeclineSerializer, FriendListSerializer, UnfriendSerializer, FollowListSerializer,\
+    FriendRequestAcceptDeclineSerializer, FriendListSerializer, FollowListSerializer, \
     FollowersListSerializer
 
 
@@ -32,6 +31,7 @@ class UserView(generics.CreateAPIView):
         user.set_password(self.request.data['password'])
         user.save()
 
+
 class UserProfileView(generics.RetrieveAPIView):
     queryset = Profile.objects.all()
     serializer_class = ProfileSerializer
@@ -42,6 +42,7 @@ class UserProfileView(generics.RetrieveAPIView):
             return Profile.objects.get(user__id=self.kwargs['id'])
         except Profile.DoesNotExist:
             raise NotFound("Profile not found")
+
 
 class UserProfileUpdateView(generics.UpdateAPIView):
     queryset = Profile.objects.all()
@@ -57,9 +58,25 @@ class UserProfileUpdateView(generics.UpdateAPIView):
     def perform_update(self, serializer):
         serializer.save()
 
+
 class UserAnimeByUsernameView(generics.ListAPIView):
     serializer_class = UserAnimeSerializer
     permission_classes = [AllowAny]
+
+    def get_queryset(self):
+        id = self.kwargs.get('id')
+        try:
+            user = User.objects.get(id=id)
+        except User.DoesNotExist:
+            raise NotFound("User not found")
+
+        return UserAnimeList.objects.filter(author=user)
+
+
+class UserAnimeByIdView(generics.ListAPIView):
+    serializer_class = UserAnimeSerializer
+    permission_classes = [AllowAny]
+
     def get_queryset(self):
         id = self.kwargs.get('id')
         try:
@@ -75,6 +92,7 @@ class UserListView(generics.ListAPIView):
     serializer_class = UserSerializer
     permission_classes = [AllowAny]
 
+
 class GenreList(generics.ListCreateAPIView):
     serializer_class = GenreSerializer
     permission_classes = [IsAuthenticated]
@@ -87,6 +105,7 @@ class GenreList(generics.ListCreateAPIView):
         serializer.is_valid(raise_exception=True)
         serializer.save(author=self.request.user)
 
+
 class GenreDelete(generics.DestroyAPIView):
     serializer_class = GenreSerializer
     permission_classes = [IsAuthenticated]
@@ -95,10 +114,12 @@ class GenreDelete(generics.DestroyAPIView):
         user = self.request.user
         return Genre.objects.filter(author=user)
 
+
 class AnimeView(generics.ListCreateAPIView):
     queryset = Anime.objects.all()
     serializer_class = AnimeSerializer
     permission_classes = [AllowAny]
+
 
 def read_json_file_view(request):
     file_path = os.path.join(os.path.dirname(__file__), 'data', 'anime_data.json')
@@ -107,10 +128,12 @@ def read_json_file_view(request):
 
     return JsonResponse(json_data)
 
+
 class AnimeQuotesView(generics.ListCreateAPIView):
     permission_classes = [AllowAny]
     serializer_class = QuoteSerializer
     queryset = AnimeQuotes.objects.all()
+
 
 class UserAnimeView(generics.ListCreateAPIView):
     serializer_class = UserAnimeSerializer
@@ -146,6 +169,7 @@ class UserAnimeDeleteView(generics.DestroyAPIView):
         user = self.request.user
         return UserAnimeList.objects.filter(author=user)
 
+
 class UserAnimeUpdateView(generics.UpdateAPIView):
     serializer_class = UserAnimeSerializer
     permission_classes = [IsAuthenticated]
@@ -170,6 +194,7 @@ class UserAnimeUpdateView(generics.UpdateAPIView):
         except Exception as e:
             return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
+
 class AnimeAllView(generics.ListCreateAPIView):
     permission_classes = [AllowAny]
     serializer_class = AnimeSerializer
@@ -178,6 +203,7 @@ class AnimeAllView(generics.ListCreateAPIView):
         return Anime.objects.annotate(
             first_letter=Lower(Substr('title', 1, 1))
         ).order_by('first_letter')
+
 
 class TempDeletedAnimeView(generics.ListCreateAPIView):
     serializer_class = TempDeletedAnimeSerializer
@@ -190,10 +216,12 @@ class TempDeletedAnimeView(generics.ListCreateAPIView):
     def perform_create(self, serializer):
         serializer.save(author=self.request.user)
 
-class AllUsersView (generics.ListAPIView):
+
+class AllUsersView(generics.ListAPIView):
     queryset = Profile.objects.all()
     serializer_class = AllUsersSerializer
     permission_classes = [AllowAny]
+
 
 class FriendRequestView(generics.ListCreateAPIView):
     queryset = FriendRequest.objects.all()
@@ -234,6 +262,7 @@ class AcceptFriendRequestView(APIView):
             return Response({'error': 'Unable to accept friend request'}, status=status.HTTP_400_BAD_REQUEST)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
+
 class DeclineFriendRequestView(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -245,6 +274,7 @@ class DeclineFriendRequestView(APIView):
                 return Response({'message': 'Friend request declined'}, status=status.HTTP_200_OK)
             return Response({'error': 'Unable to decline friend request'}, status=status.HTTP_400_BAD_REQUEST)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
 
 class UnfriendView(APIView):
     permission_classes = [IsAuthenticated]
@@ -265,6 +295,7 @@ class UnfriendView(APIView):
         except FriendList.DoesNotExist:
             return Response({'error': 'Friend list not found'}, status=status.HTTP_404_NOT_FOUND)
 
+
 class FriendListView(generics.ListCreateAPIView):
     serializer_class = FriendListSerializer
     permission_classes = [AllowAny]
@@ -275,6 +306,7 @@ class FriendListView(generics.ListCreateAPIView):
             return FriendList.objects.filter(user_id=user)
         except FriendList.DoesNotExist:
             raise NotFound("Friend list not found")
+
 
 class FriendListByIdView(generics.ListCreateAPIView):
     serializer_class = FriendListSerializer
@@ -341,6 +373,7 @@ class UnfollowUserView(APIView):
         follow_instance.remove_following(user_to_unfollow)
         return Response({'message': 'Unfollowed successfully'}, status=status.HTTP_200_OK)
 
+
 class FollowingListByIdView(generics.ListCreateAPIView):
     serializer_class = FollowListSerializer
     permission_classes = [AllowAny]
@@ -354,6 +387,7 @@ class FollowingListByIdView(generics.ListCreateAPIView):
             raise NotFound("User not found")
         except Follow.DoesNotExist:
             raise NotFound("Follow list not found")
+
 
 class FollowersListByIdView(generics.ListCreateAPIView):
     serializer_class = FollowersListSerializer

@@ -5,11 +5,13 @@ import Login from './pages/Login'
 import ProtectedRoute from "./components/ProtectedRoute.jsx";
 import HomeAll from "./pages/HomeAll.jsx";
 import Find from "./pages/Find.jsx";
-import AnimneList from "./pages/AnimeList.jsx";
+import AnimeList from "./pages/AnimeList.jsx";
 import Profile from "./pages/profile/Profile.jsx";
 import ProfileEdit from "./pages/profile/ProfileEdit.jsx";
 import PSWReset from "./pages/password/PasswordReset.jsx";
 import ProfileAll from "./pages/profile/ProfileAll.jsx";
+import AnimeListAll from "./pages/AnimeListAll.jsx";
+import Chat from "./pages/Chat.jsx";
 
 function App() {
 
@@ -27,7 +29,7 @@ function App() {
                 path="/animelist"
                 element={
                     <ProtectedRoute>
-                        <AnimneList/>
+                        <AnimeList/>
                     </ProtectedRoute>
                 }
                 >
@@ -57,7 +59,17 @@ function App() {
                 }
                 >
                 </Route>
+                <Route path="/chat"
+                element={
+                    <ProtectedRoute>
+                        <Chat/>
+                    </ProtectedRoute>
+                }
+                >
+                </Route>
+
                 <Route path="/profile/:userId" element={<ProfileAll />} />
+                <Route path="/anime-list/:userId" element={<AnimeListAll />} />
                 <Route path="/" element={<HomeAll />} />
                 <Route path="/login" element={<Login />} />
                 <Route path="/register" element={<RegisterPage />} />
