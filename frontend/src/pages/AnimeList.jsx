@@ -1,7 +1,7 @@
-import React, { useEffect, useState } from "react";
+import React, {useEffect, useState} from "react";
 import api from "../api";
 import Swal from 'sweetalert2';
-import { toast, ToastContainer } from "react-toastify";
+import {ToastContainer} from "react-toastify";
 
 function AnimeList() {
     const [animes, setAnimes] = useState([]);
@@ -28,7 +28,6 @@ function AnimeList() {
         setFilteredAnimes(filtered);
         setShowSearchResults(searchTerm.length > 0);
     };
-
 
 
     const fetchAllAnime = () => {
@@ -131,7 +130,7 @@ function AnimeList() {
         } else if (status === false) {
             await handleDeleteAnime(anime.id);
             Swal.fire(`Anime deleted!`, '', 'success');
-        }else{
+        } else {
             Swal.fire(`Cancelled!`, '', 'info');
         }
     };
@@ -190,7 +189,8 @@ function AnimeList() {
 
     return (
         <div className="min-h-screen bg-[#fdf0d5] pt-20">
-            <a className="bg-slate-800 text-white m-4 p-2 rounded mb-4 absolute top-0 hover:bg-[#780000]" href="/home">Back</a>
+            <a className="bg-slate-800 text-white m-4 p-2 rounded mb-4 absolute top-0 hover:bg-[#780000]"
+               href="/home">Back</a>
             <div className="container mx-auto p-4">
                 <h1 className="text-4xl font-bold text-center mb-8 text-[#780000]">Anime List</h1>
                 <div className="mb-4">
@@ -214,16 +214,18 @@ function AnimeList() {
                     </ul>
                 )}
 
-                <button className="bg-slate-800 text-white p-2 rounded m-2 hover:bg-[#780000]" onClick={() => setShowAnimeList(!showAnimeList)}>
+                <button className="bg-slate-800 text-white p-2 rounded m-2 hover:bg-[#780000]"
+                        onClick={() => setShowAnimeList(!showAnimeList)}>
                     {showAnimeList ? "HIDE ANIME" : "SHOW ALL ANIME"}
                 </button>
 
                 {showAnimeList && (
                     <ul className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 mb-4">
                         {filteredAnimes.map((anime) => (
-                            <li key={anime.mal_id} className="bg-white rounded-lg shadow-md overflow-hidden hover:bg-gray-200 cursor-pointer p-2"
+                            <li key={anime.mal_id}
+                                className="bg-white rounded-lg shadow-md overflow-hidden hover:bg-gray-200 cursor-pointer p-2"
                                 onClick={() => handleAnimeClick(anime)}>
-                                <img src={anime.image_url} alt={anime.title} className="w-full h-48 object-cover" />
+                                <img src={anime.image_url} alt={anime.title} className="w-full h-48 object-cover"/>
                                 <div className="p-4">
                                     <p className="text-lg font-semibold">{anime.title}</p>
                                 </div>
@@ -233,7 +235,7 @@ function AnimeList() {
                 )}
 
                 <button className="bg-slate-800 text-white p-2 rounded m-2 hover:bg-[#780000]"
-                    onClick={() => setShowUserAnimeList(!showUserAnimeList)}>
+                        onClick={() => setShowUserAnimeList(!showUserAnimeList)}>
                     {showUserAnimeList ? "HIDE ANIME" : "SHOW YOUR ANIME"}
                 </button>
                 {showUserAnimeList && userAnimeList.length > 0 && (
@@ -245,14 +247,15 @@ function AnimeList() {
                                     className="bg-white rounded-lg shadow-md overflow-hidden p-2 hover:bg-gray-200 cursor-pointer"
                                     onClick={() => handleDeleteClick(anime)}>
                                     <p className="text-lg font-semibold">{anime.title}</p>
-                                    <img src={anime.image_url} alt={anime.title} className="w-full h-48 object-cover mt-2" />
+                                    <img src={anime.image_url} alt={anime.title}
+                                         className="w-full h-48 object-cover mt-2"/>
                                 </li>
                             ))}
                         </ul>
                     </div>
                 )}
                 <button className="bg-slate-800 text-white p-2 rounded m-2 hover:bg-[#780000]"
-                    onClick={() => setShowUserPlanToWatchList(!showUserPlanToWatchList)}>
+                        onClick={() => setShowUserPlanToWatchList(!showUserPlanToWatchList)}>
                     {showUserPlanToWatchList ? "HIDE ANIME" : "SHOW YOUR PLAN TO WATCH LIST"}
                 </button>
                 {showUserPlanToWatchList && userAnimeList.length > 0 && (
@@ -264,14 +267,15 @@ function AnimeList() {
                                     className="bg-white rounded-lg shadow-md overflow-hidden p-2 hover:bg-gray-200 cursor-pointer"
                                     onClick={() => handleDeleteClick(anime)}>
                                     <p className="text-lg font-semibold">{anime.title}</p>
-                                    <img src={anime.image_url} alt={anime.title} className="w-full h-48 object-cover mt-2" />
+                                    <img src={anime.image_url} alt={anime.title}
+                                         className="w-full h-48 object-cover mt-2"/>
                                 </li>
                             ))}
                         </ul>
                     </div>
                 )}
             </div>
-            <ToastContainer />
+            <ToastContainer/>
         </div>
     );
 }

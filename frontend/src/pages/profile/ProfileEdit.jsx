@@ -1,54 +1,54 @@
-import React, { useState, useEffect } from "react";
+import React, {useEffect, useState} from "react";
+import {useNavigate} from "react-router-dom";
 import api from "../../api.js";
+import {toast, ToastContainer} from "react-toastify";
+import 'react-toastify/dist/ReactToastify.css';
 
 function ProfileEdit() {
     const id = localStorage.getItem('user_id');
-    const [bio, setBio] = useState(" ");
-    const [pfp, setPfp] = useState(" ");
-    const [nickname, setNickname] = useState(" ");
+    const navigate = useNavigate();
     const [formData, setFormData] = useState({
-        username: nickname || "",
-        profile_image: pfp || "",
-        bio: bio || "",
+        username: "",
+        profile_image: "",
+        bio: "",
+        is_public: false,
     });
+    const [previewImage, setPreviewImage] = useState("");
 
     useEffect(() => {
         fetchUserProfile();
     }, [id]);
 
     const fetchUserProfile = async () => {
-        const response = await api.get(`/user/profile/${id}/`);
-        if (response.status === 200) {
-            console.log(response.data);
-            setBio(response.data.bio);
-            setPfp(response.data.profile_image);
-            setNickname(response.data.username);
-            setFormData({
-                username: response.data.username || "",
-                profile_image: response.data.profile_image || "",
-                bio: response.data.bio || "",
-            });
-        } else {
-            console.log("Error fetching recent anime");
+        try {
+            const response = await api.get(`/user/profile/${id}/`);
+            if (response.status === 200) {
+                const {username, profile_image, bio, anime_list_public} = response.data;
+                setFormData({
+                    username: username || "",
+                    profile_image: profile_image || "",
+                    bio: bio || "",
+                    is_public: anime_list_public || false,
+                });
+                setPreviewImage(profile_image);
+            } else {
+                console.error("Error fetching user profile");
+            }
+        } catch (error) {
+            console.error("Error fetching user profile", error);
         }
     };
 
     const handleInputChange = (e) => {
-        const { name, value } = e.target;
-        setFormData((prevData) => ({
-            ...prevData,
-            [name]: value,
-        }));
+        const {name, value} = e.target;
+        setFormData(prevData => ({...prevData, [name]: value}));
     };
 
     const handleFileChange = (e) => {
-        const { name, files } = e.target;
-        if (files && files[0]) {
-            setFormData((prevData) => ({
-                ...prevData,
-                [name]: files[0],  // Save the file, not URL.createObjectURL
-            }));
-            if (name === 'profile_image') setPfp(URL.createObjectURL(files[0]));
+        const file = e.target.files[0];
+        if (file) {
+            setFormData(prevData => ({...prevData, profile_image: file}));
+            setPreviewImage(URL.createObjectURL(file));
         }
     };
 
@@ -57,27 +57,27 @@ function ProfileEdit() {
         const formDataToSend = new FormData();
         formDataToSend.append('username', formData.username);
         formDataToSend.append('bio', formData.bio);
-        if (formData.profile_image && formData.profile_image instanceof File) {
+        formDataToSend.append('anime_list_public', formData.is_public);
+        if (formData.profile_image instanceof File) {
             formDataToSend.append('profile_image', formData.profile_image);
         }
 
         try {
-            const response = await api.put(`user/profile/${id}/update/`, formDataToSend, {
-                headers: {
-                    'Content-Type': 'multipart/form-data',
-                },
+            const response = await api.put(`/user/profile/${id}/update/`, formDataToSend, {
+                headers: {'Content-Type': 'multipart/form-data'},
             });
             if (response.status === 200) {
                 console.log("Profile updated successfully");
-                localStorage.setItem('id', id);
                 localStorage.setItem('username', formData.username);
                 localStorage.setItem('profile_image', formData.profile_image);
                 localStorage.setItem('bio', formData.bio);
+                localStorage.setItem('anime_list_public', formData.is_public);
+                toast.success("Profile updated successfully");
             } else {
-                console.log("Error updating profile");
+                console.error("Error updating profile");
             }
         } catch (error) {
-            console.error("There was an error updating the profile!", error);
+            console.error("Error updating profile", error);
         }
     };
 
@@ -86,70 +86,104 @@ function ProfileEdit() {
         window.location.href = "/login";
     };
 
+    const handleTogglePublic = async () => {
+        const updatedIsPublic = !formData.is_public;
+        setFormData(prevData => ({...prevData, is_public: updatedIsPublic}));
+
+        try {
+            const response = await api.patch(`/user/profile/${id}/update/`, {
+                anime_list_public: updatedIsPublic,
+            });
+
+            if (response.status === 200) {
+                console.log("Anime list visibility updated successfully");
+            } else {
+                console.log("Error updating anime list visibility");
+            }
+        } catch (error) {
+            console.error("There was an error updating the anime list visibility!", error);
+        }
+    };
+
     return (
-        <div className="min-h-screen bg-violet-500">
-            <header className="text-center">
-                <h2 className="font-bold text-xl pt-2">Edit Profile</h2>
+        <div className="min-h-screen primary_bg flex flex-col items-center">
+            <header className="text-center mt-6">
+                <h2 className="font-bold text-2xl primary_text">Edit Profile</h2>
             </header>
-            <div>
-                <div className="bg-white text-gray-800 rounded-lg shadow-lg p-6 md:w-1/2 max-h-fit mx-auto">
-                    <div className="flex flex-col items-center">
-                        <img
-                            src={pfp}
-                            alt="profile"
-                            className="rounded-full w-32 h-32 object-cover mb-4 shadow-lg"
-                        />
-                        <form onSubmit={handleSubmit} className="w-full">
-                            <div className="mb-4">
-                                <label htmlFor="username" className="block text-sm font-medium text-gray-700">Username</label>
-                                <input
-                                    type="text"
-                                    id="username"
-                                    name="username"
-                                    value={formData.username}
-                                    onChange={handleInputChange}
-                                    className="mt-2 w-full p-2 border border-gray-300 rounded-md"
-                                    required
-                                />
-                            </div>
-                            <div className="mb-4">
-                                <label htmlFor="profile_image" className="block text-sm font-medium text-gray-700">Profile Picture</label>
-                                <input
-                                    type="file"
-                                    id="profile_image"
-                                    name="profile_image"
-                                    onChange={handleFileChange}
-                                    className="mt-2 w-full p-2 border border-gray-300 rounded-md"
-                                />
-                            </div>
-                            <div className="mb-4">
-                                <label htmlFor="bio" className="block text-sm font-medium text-gray-700">Bio</label>
-                                <textarea
-                                    id="bio"
-                                    name="bio"
-                                    value={bio}
-                                    onChange={handleInputChange}
-                                    className="mt-2 w-full p-2 border border-gray-300 rounded-md"
-                                    rows="4"
-                                ></textarea>
-                            </div>
+            <div className="primary_form_bg text-gray-800 rounded-lg shadow-lg p-8 md:w-1/2 mt-6">
+                <div className="flex flex-col items-center">
+                    <img
+                        src={previewImage || "/default-profile.png"}
+                        alt="profile"
+                        className="rounded-full w-32 h-32 object-cover mb-4 shadow-lg"
+                    />
+                    <form onSubmit={handleSubmit} className="w-full">
+                        <div className="mb-6">
+                            <label htmlFor="username"
+                                   className="block text-sm font-medium text-gray-700">Username</label>
+                            <input
+                                type="text"
+                                id="username"
+                                name="username"
+                                value={formData.username}
+                                onChange={handleInputChange}
+                                className="mt-2 w-full p-3 border border-gray-300 rounded-md"
+                                required
+                            />
+                        </div>
+                        <div className="mb-6">
+                            <label htmlFor="profile_image" className="block text-sm font-medium text-gray-700">Profile
+                                Picture</label>
+                            <input
+                                type="file"
+                                id="profile_image"
+                                name="profile_image"
+                                onChange={handleFileChange}
+                                className="mt-2 w-full p-3 border border-gray-300 rounded-md"
+                            />
+                        </div>
+                        <div className="mb-6">
+                            <label htmlFor="bio" className="block text-sm font-medium text-gray-700">Bio</label>
+                            <textarea
+                                id="bio"
+                                name="bio"
+                                value={formData.bio}
+                                onChange={handleInputChange}
+                                className="mt-2 w-full p-3 border border-gray-300 rounded-md"
+                                rows="4"
+                            ></textarea>
+                        </div>
+                        <div className="flex items-center justify-between mb-6">
+                            <button
+                                type="button"
+                                onClick={handleTogglePublic}
+                                className="bg-indigo-600 hover:bg-indigo-500 text-white py-2 px-4 rounded-full shadow-lg"
+                            >
+                                {formData.is_public ? "Make Private" : "Make Public"}
+                            </button>
                             <button
                                 type="submit"
-                                className="bg-indigo-600 hover:bg-indigo-500 text-white py-2 px-4 rounded-full mt-6 shadow-lg transition duration-300"
+                                className="bg-indigo-600 hover:bg-indigo-500 text-white py-2 px-4 rounded-full shadow-lg"
                             >
                                 Save Changes
                             </button>
-                            <a className="bg-indigo-600 hover:bg-indigo-500 text-white py-2 px-4 rounded-full mt-6 shadow-lg transition duration-300" href="/profile">Back</a>
-                        </form>
-                        <button
-                            onClick={handleLogout}
-                            className="bg-red-600 hover:bg-red-500 text-white py-2 px-4 rounded-full mt-6 shadow-lg transition duration-300"
-                        >
-                            Logout
-                        </button>
-                    </div>
+                        </div>
+                    </form>
+                    <button
+                        onClick={handleLogout}
+                        className="bg-red-600 hover:bg-red-500 text-white py-2 px-4 rounded-full mt-6 shadow-lg"
+                    >
+                        Logout
+                    </button>
+                    <button
+                        onClick={() => navigate(-1)}
+                        className="bg-gray-600 hover:bg-gray-500 text-white py-2 px-4 rounded-full mt-6 shadow-lg"
+                    >
+                        Go Back
+                    </button>
                 </div>
             </div>
+            <ToastContainer/>
         </div>
     );
 }
