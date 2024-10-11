@@ -1,6 +1,7 @@
 from django.contrib import admin
 
-from .models import FriendRequest, FriendList, Profile
+from .models_friends import FriendRequest, FriendList
+from .models_user import Profile
 
 # RegisterPage your models here.
 
