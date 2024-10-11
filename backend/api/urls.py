@@ -1,5 +1,5 @@
 from django.urls import path
-from . import views_user, views_anime, views_friends, views_follow
+from . import views_user, views_anime, views_friends, views_follow, views_chat
 from django.contrib.auth import views as auth_views
 
 
@@ -52,5 +52,9 @@ urlpatterns = [
     path('user/unfollow/<int:user_id>/', views_follow.UnfollowUserView.as_view(), name='unfollow-user'),
     path('user/followers/<int:id>/', views_follow.FollowersListByIdView.as_view(), name='followers'),
     path('user/following/<int:id>/', views_follow.FollowingListByIdView.as_view(), name='following'),
+
+    #CHAT
+    path('user/messages/', views_chat.MessageListCreateView.as_view(), name='messages'),
+    path('user/send-message/', views_chat.SendMessageView.as_view(), name='send-message'),
 ]
 

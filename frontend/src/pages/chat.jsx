@@ -1,9 +1,32 @@
 
 import React, {useEffect, useRef, useState} from "react";
-
 import 'react-toastify/dist/ReactToastify.css';
+import api from "../api.js";
 
 const Chat = () => {
+    const [messages, setMessages] = useState([]);
+    const [newMessage, setNewMessage] = useState("");
+    const [receiver, setReceiver] = useState("");
+
+    const SendMessage = async () => {
+        try {
+            const response = await api.post("user/send-message/", {
+                receiver: receiver,
+                content: newMessage
+            });
+
+            if (response.status === 200) {
+                console.log("Message sent successfully");
+                setMessages([...messages, response.data]);
+                setNewMessage("");
+            } else {
+                console.error("Error sending message");
+            }
+        } catch (error) {
+            console.error("Error sending message", error);
+        }
+    };
+
     return (
         <div className="chat-container bg-[#fdf0d5] min-h-screen flex flex-col">
             {/* Header */}
@@ -38,10 +61,22 @@ const Chat = () => {
             <div className="chat-input bg-white p-4 shadow-lg flex items-center">
                 <input
                     type="text"
+                    placeholder="Receiver"
+                    value={receiver}
+                    onChange={(e) => setReceiver(e.target.value)}
+                    className="flex-grow p-2 rounded-lg border border-gray-300 mr-2"
+                />
+                <input
+                    type="text"
                     placeholder="Type your message..."
+                    value={newMessage}
+                    onChange={(e) => setNewMessage(e.target.value)}
                     className="flex-grow p-2 rounded-lg border border-gray-300"
                 />
-                <button className="bg-blue-500 hover:bg-blue-600 text-white py-2 px-4 rounded-lg ml-4">
+                <button
+                    onClick={SendMessage}
+                    className="bg-blue-500 hover:bg-blue-600 text-white py-2 px-4 rounded-lg ml-4"
+                >
                     Send
                 </button>
             </div>
