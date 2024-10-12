@@ -1,9 +1,10 @@
 from django.contrib import admin
 
+from .models_chat import Chat, ChatMessage
 from .models_friends import FriendRequest, FriendList
 from .models_user import Profile
 
-# RegisterPage your models here.
+# Register your models here.
 
 class FriendListAdmin(admin.ModelAdmin):
     search_fields = ['user__username']
@@ -16,7 +17,6 @@ class FriendListAdmin(admin.ModelAdmin):
 
 admin.site.register(FriendList, FriendListAdmin)
 
-
 class FriendRequestAdmin(admin.ModelAdmin):
     search_fields = ['sender__username', 'receiver__username']
     list_display = ['sender', 'receiver', 'is_active']
@@ -27,5 +27,9 @@ class FriendRequestAdmin(admin.ModelAdmin):
         model = FriendRequest
 
 admin.site.register(FriendRequest, FriendRequestAdmin)
+class ChatAdmin(admin.ModelAdmin):
+    list_display = ['id']  # You can modify this to show relevant fields if needed
+    search_fields = ['participants__username']  # If you want to search by participant usernames
 
-admin.site.register(Profile)
+admin.site.register(Chat, ChatAdmin)
+admin.site.register(ChatMessage)

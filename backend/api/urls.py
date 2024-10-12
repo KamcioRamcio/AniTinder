@@ -56,5 +56,6 @@ urlpatterns = [
     #CHAT
     path('user/messages/', views_chat.MessageListCreateView.as_view(), name='messages'),
     path('user/send-message/', views_chat.SendMessageView.as_view(), name='send-message'),
+    path('messages/<str:room_name>/', views_chat.MessageHistoryView.as_view(), name='message_history'),
 ]
 
