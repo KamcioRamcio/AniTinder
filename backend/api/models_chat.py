@@ -1,4 +1,4 @@
-# models.py
+
 from django.db import models
 from django.contrib.auth.models import User
 
@@ -10,3 +10,19 @@ class Message(models.Model):
 
     def __str__(self):
         return f'Message from {self.sender} to {self.receiver} at {self.timestamp}'
+
+class Chat(models.Model):
+    participants = models.ManyToManyField(User, related_name='chats')
+    def __str__(self):
+        return f'Chat between {self.participants.all()}'
+
+class ChatMessage(models.Model):
+    chat = models.ForeignKey(Chat, related_name='messages', on_delete=models.CASCADE)
+    sender = models.ForeignKey(User, related_name='chat_messages', on_delete=models.CASCADE)
+    content = models.TextField()
+    timestamp = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f'{self.sender.username} : {self.content} '
+    class Meta:
+        ordering = ['timestamp']
