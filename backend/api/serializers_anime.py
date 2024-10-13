@@ -25,5 +25,5 @@ class QuoteSerializer(serializers.ModelSerializer):
 class TempDeletedAnimeSerializer(serializers.ModelSerializer):
     class Meta:
         model = TempDeletedAnime
-        fields = ['id', 'author', 'title', 'mal_id']
+        fields = ['id', 'author', 'title', 'mal_id', 'time_deleted']
         extra_kwargs = {'author': {'read_only': True}}

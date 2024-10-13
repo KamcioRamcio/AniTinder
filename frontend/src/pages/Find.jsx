@@ -24,13 +24,15 @@ function Find() {
         nickname: '',
     });
 
+    useEffect(() => {
+        fetchUserAnimeList();
+    }, []);
 
     useEffect(() => {
         fetchAnime();
         fetchUserProfile();
         fetchTempDeletedAnime();
         fetchQuotes();
-        fetchUserAnimeList();
     }, []);
 
 
@@ -59,6 +61,8 @@ function Find() {
             const response = await api.get("user/anime/");
             if (Array.isArray(response.data)) {
                 setUserAnime(response.data);
+                localStorage.setItem('user_id', response.data[0].author);
+
             } else {
                 console.error("Response data is not an array:", response.data);
             }

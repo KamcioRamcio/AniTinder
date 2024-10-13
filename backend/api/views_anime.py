@@ -64,11 +64,13 @@ class AnimeAllView(generics.ListCreateAPIView):
 
 class TempDeletedAnimeView(generics.ListCreateAPIView):
     serializer_class = TempDeletedAnimeSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [AllowAny]
 
     def get_queryset(self):
         user = self.request.user
         return TempDeletedAnime.objects.filter(author=user)
+
+
 
     def perform_create(self, serializer):
         serializer.save(author=self.request.user)

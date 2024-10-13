@@ -33,6 +33,7 @@ class FriendRequest(models.Model):
     sender = models.ForeignKey(User, on_delete=models.CASCADE, related_name='sender')
     receiver = models.ForeignKey(User, on_delete=models.CASCADE, related_name='receiver')
     is_active = models.BooleanField(default=True)
+    is_accepted = models.BooleanField(default=False)
     timestamp = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
@@ -44,6 +45,7 @@ class FriendRequest(models.Model):
         if sender_friend_list and receiver_friend_list:
             sender_friend_list.add_friend(self.receiver)
             receiver_friend_list.add_friend(self.sender)
+            self.is_accepted = True
             self.is_active = False
             self.save()
             return True

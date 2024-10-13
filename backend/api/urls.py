@@ -54,8 +54,9 @@ urlpatterns = [
     path('user/following/<int:id>/', views_follow.FollowingListByIdView.as_view(), name='following'),
 
     #CHAT
-    path('user/messages/', views_chat.MessageListCreateView.as_view(), name='messages'),
-    path('user/send-message/', views_chat.SendMessageView.as_view(), name='send-message'),
-    path('messages/<str:room_name>/', views_chat.MessageHistoryView.as_view(), name='message_history'),
+
+    path('chats/', views_chat.ChatView.as_view(), name='chats'),
+    path('chat/<str:room_name>/messages/', views_chat.ChatMessageListView.as_view(), name='chat-messages'),
+
 ]
 
