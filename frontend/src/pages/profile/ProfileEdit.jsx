@@ -93,10 +93,12 @@ function ProfileEdit() {
         try {
             const response = await api.patch(`/user/profile/${id}/update/`, {
                 anime_list_public: updatedIsPublic,
+
             });
 
             if (response.status === 200) {
                 console.log("Anime list visibility updated successfully");
+                toast.success("Anime list visibility updated successfully")
             } else {
                 console.log("Error updating anime list visibility");
             }

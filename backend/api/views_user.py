@@ -112,7 +112,7 @@ class RecentAnimeView(generics.ListCreateAPIView):
 
 class UserAnimeDeleteView(generics.DestroyAPIView):
     serializer_class = UserAnimeSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [AllowAny]
 
     def get_queryset(self):
         user = self.request.user

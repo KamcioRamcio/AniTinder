@@ -7,6 +7,8 @@ function AnimeList() {
     const [animes, setAnimes] = useState([]);
     const [searchTerm, setSearchTerm] = useState("");
     const [filteredAnimes, setFilteredAnimes] = useState([]);
+    const [tmpDeleteAnime, setTmpDeleteAnime] = useState([]);
+    const [showTmpDeleteAnime, setShowTmpDeleteAnime] = useState(false);
     const [showAnimeList, setShowAnimeList] = useState(false);
     const [showSearchResults, setShowSearchResults] = useState(false);
     const [userAnimeList, setUserAnimeList] = useState([]);
@@ -16,6 +18,7 @@ function AnimeList() {
     useEffect(() => {
         fetchAllAnime();
         fetchUserAnimeList();
+        fetchUserTmpDeleteAnime();
     }, []);
 
     const handleSearchChange = (event) => {
@@ -57,6 +60,19 @@ function AnimeList() {
             console.error("There was an error fetching the user anime list!", error);
         }
     };
+
+    const fetchUserTmpDeleteAnime = async () => {
+        try {
+            const response = await api.get("user/anime/temp-deleted/");
+            if (Array.isArray(response.data)) {
+                setTmpDeleteAnime(response.data);
+            } else {
+                console.error("Response data is not an array:", response.data);
+            }
+        } catch (error) {
+            console.error("There was an error fetching the user anime list!", error);
+        }
+    }
 
     const handleAddAnime = async (anime, watched) => {
         if (userAnimeList.some(item => item.mal_id === anime.mal_id)) {
@@ -232,6 +248,25 @@ function AnimeList() {
                             </li>
                         ))}
                     </ul>
+                )}
+                <button
+                    className="bg-slate-800 text-white p-2 rounded m-2 hover:bg-[#780000]"
+                    onClick={() => setShowTmpDeleteAnime(!showTmpDeleteAnime)}>
+                    {showTmpDeleteAnime ? "HIDE DELETED ANIME" : "SHOW DELETED ANIME"}
+                </button>
+                {showTmpDeleteAnime && tmpDeleteAnime.length > 0 && (
+                    <div className="flex justify-start flex-col">
+                        <h2 className="text-2xl font-bold mb-4">Deleted Anime List</h2>
+                        <ul className="flex flex-wrap gap-4">
+                            {tmpDeleteAnime.map((anime) => (
+                                <li key={anime.mal_id}
+                                    className="bg-white rounded-lg shadow-md overflow-hidden p-2 hover:bg-gray-200 cursor-pointer"
+                                    onClick={() => handleDeleteClick(anime)}>
+                                    <p className="text-lg font-semibold">{anime.title}</p>
+                                </li>
+                            ))}
+                        </ul>
+                    </div>
                 )}
 
                 <button className="bg-slate-800 text-white p-2 rounded m-2 hover:bg-[#780000]"
