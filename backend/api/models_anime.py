@@ -32,14 +32,6 @@ class Anime(models.Model):
         return self.title
 
 
-class TempDeletedAnime(models.Model):
-    author = models.ForeignKey(User, on_delete=models.CASCADE, null=True, blank=True)
-    title = models.CharField(max_length=255)
-    mal_id = models.IntegerField(blank=True, null=True)
-    time_deleted = models.DateTimeField(auto_now_add=True, blank=True, null=True)
-
-    def __str__(self):
-        return self.title
 
 class AnimeQuotes(models.Model):
     anime = models.CharField(max_length=255)

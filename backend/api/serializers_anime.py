@@ -1,6 +1,6 @@
 from django.contrib.auth.models import User
 from rest_framework import serializers
-from .models_anime import Genre, Anime, AnimeQuotes, TempDeletedAnime
+from .models_anime import Genre, Anime, AnimeQuotes
 class GenreSerializer(serializers.ModelSerializer):
     class Meta:
         model = Genre
@@ -22,8 +22,3 @@ class QuoteSerializer(serializers.ModelSerializer):
         model = AnimeQuotes
         fields = ['id', 'anime', 'character', 'quote']
 
-class TempDeletedAnimeSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = TempDeletedAnime
-        fields = ['id', 'author', 'title', 'mal_id', 'time_deleted']
-        extra_kwargs = {'author': {'read_only': True}}

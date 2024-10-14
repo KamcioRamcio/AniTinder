@@ -1,17 +1,13 @@
-import json
-import os
-
 from django.contrib.auth.models import User
-from django.db.models.functions import Lower, Substr
-from django.http import JsonResponse
 from rest_framework import generics
 from rest_framework import status
-from rest_framework.exceptions import ValidationError, NotFound
+from rest_framework.exceptions import NotFound
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
-from rest_framework.views import APIView
-from .serializers_user import UserSerializer, ProfileSerializer, UserAnimeSerializer, AllUsersSerializer
-from .models_user import Profile, UserAnimeList
+
+from .models_user import Profile, UserAnimeList, TempDeletedAnime
+from .serializers_user import UserSerializer, ProfileSerializer, UserAnimeSerializer, AllUsersSerializer, \
+    TempDeletedAnimeSerializer
 
 
 class UserView(generics.CreateAPIView):
@@ -85,6 +81,7 @@ class UserListView(generics.ListAPIView):
     serializer_class = UserSerializer
     permission_classes = [AllowAny]
 
+
 class UserAnimeView(generics.ListCreateAPIView):
     serializer_class = UserAnimeSerializer
     permission_classes = [IsAuthenticated]
@@ -109,6 +106,7 @@ class RecentAnimeView(generics.ListCreateAPIView):
         except User.DoesNotExist:
             raise NotFound("User not found")
         return UserAnimeList.objects.filter(author=user).order_by('-add_time')[:5]
+
 
 class UserAnimeDeleteView(generics.DestroyAPIView):
     serializer_class = UserAnimeSerializer
@@ -143,8 +141,44 @@ class UserAnimeUpdateView(generics.UpdateAPIView):
         except Exception as e:
             return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
+
+class TempDeletedAnimeView(generics.ListCreateAPIView):
+    serializer_class = TempDeletedAnimeSerializer
+    permission_classes = [AllowAny]
+
+    def get_queryset(self):
+        user = self.request.user
+        return TempDeletedAnime.objects.filter(author=user)
+
+    def perform_create(self, serializer):
+        serializer.save(author=self.request.user)
+
+
 class AllUsersView(generics.ListAPIView):
     queryset = Profile.objects.all()
     serializer_class = AllUsersSerializer
     permission_classes = [AllowAny]
 
+
+class DeleteTempDeletedAnimeView(generics.DestroyAPIView):
+    serializer_class = TempDeletedAnimeSerializer
+    permission_classes = [AllowAny]
+
+    def get_queryset(self):
+        user = self.request.user
+        return TempDeletedAnime.objects.filter(author=user)
+
+
+class DeleteAllTmpDeletedAnimeView(generics.ListAPIView):
+    permission_classes = [AllowAny]
+
+    def delete(self, request, pk, *args, **kwargs):
+        user = request.user
+        temp_deleted_anime = TempDeletedAnime.objects.filter(author=user)
+
+        if temp_deleted_anime.exists():
+            temp_deleted_anime.delete()
+            return Response({"detail": "All temporarily deleted anime were successfully deleted."},
+                            status=status.HTTP_204_NO_CONTENT)
+        else:
+            return Response({"detail": "No temporarily deleted anime found."}, status=status.HTTP_404_NOT_FOUND)
