@@ -32,7 +32,6 @@ function AnimeList() {
         setShowSearchResults(searchTerm.length > 0);
     };
 
-
     const fetchAllAnime = () => {
         api.get("anime/all/")
             .then(response => {
@@ -53,6 +52,7 @@ function AnimeList() {
             const response = await api.get("user/anime/");
             if (Array.isArray(response.data)) {
                 setUserAnimeList(response.data);
+                console.log("User anime list:", response.data);
             } else {
                 console.error("Response data is not an array:", response.data);
             }
@@ -66,6 +66,7 @@ function AnimeList() {
             const response = await api.get("user/anime/temp-deleted/");
             if (Array.isArray(response.data)) {
                 setTmpDeleteAnime(response.data);
+                console.log(response.data);
             } else {
                 console.error("Response data is not an array:", response.data);
             }
@@ -76,7 +77,12 @@ function AnimeList() {
 
     const handleAddAnime = async (anime, watched) => {
         if (userAnimeList.some(item => item.mal_id === anime.mal_id)) {
-            Swal.fire("Anime already exists in your list.", "", "error");
+            Swal.fire({
+                title: "Anime already exists in your list.",
+                icon: "error",
+                timer: 500,
+                showConfirmButton: false
+            });
             return;
         }
         try {
@@ -88,14 +94,29 @@ function AnimeList() {
                 plan_to_watch: !watched
             });
             if (response.status === 201) {
-                Swal.fire("Anime added successfully", "", "success");
+                Swal.fire({
+                    title: "Anime added successfully",
+                    icon: "success",
+                    timer: 500,
+                    showConfirmButton: false
+                });
                 fetchUserAnimeList();
             } else {
-                Swal.fire("Failed to add anime", "", "error");
+                Swal.fire({
+                    title: "Failed to add anime",
+                    icon: "error",
+                    timer: 500,
+                    showConfirmButton: false
+                });
             }
         } catch (error) {
             console.error("Error adding anime:", error);
-            Swal.fire("Error adding anime", "", "error");
+            Swal.fire({
+                title: "Error adding anime",
+                icon: "error",
+                timer: 500,
+                showConfirmButton: false
+            });
         } finally {
             setShowSearchResults(false);
             setSearchTerm("");
@@ -110,20 +131,40 @@ function AnimeList() {
             });
 
             if (response.status === 200) {
-                Swal.fire("Anime status updated successfully", "", "success");
+                Swal.fire({
+                    title: "Anime status updated successfully",
+                    icon: "success",
+                    timer: 500,
+                    showConfirmButton: false
+                });
                 fetchUserAnimeList();
             } else {
-                Swal.fire("Failed to change anime status", "", "error");
+                Swal.fire({
+                    title: "Failed to change anime status",
+                    icon: "error",
+                    timer: 500,
+                    showConfirmButton: false
+                });
             }
         } catch (error) {
             console.error("Error updating anime status:", error);
-            Swal.fire("Failed to change anime status", "", "error");
+            Swal.fire({
+                title: "Failed to change anime status",
+                icon: "error",
+                timer: 500,
+                showConfirmButton: false
+            });
         }
     };
 
     const handleAnimeClick = async (anime) => {
         if (userAnimeList.some(item => item.mal_id === anime.mal_id)) {
-            Swal.fire("Anime in your list", "", "error");
+            Swal.fire({
+                title: "Anime in your list",
+                icon: "error",
+                timer: 500,
+                showConfirmButton: false
+            });
             return;
         }
 
@@ -131,25 +172,50 @@ function AnimeList() {
 
         if (status) {
             await handleAddAnime(anime, status);
-            Swal.fire(`Added to watched!`, '', 'success');
+            Swal.fire({
+                title: `Added to watched!`,
+                icon: "success",
+                timer: 500,
+                showConfirmButton: false
+            });
         } else {
             await handleAddAnime(anime, status);
-            Swal.fire(`Added to plan to watch!`, '', 'success');
+            Swal.fire({
+                title: `Added to plan to watch!`,
+                icon: "success",
+                timer: 500,
+                showConfirmButton: false
+            });
         }
     };
 
     const handleDeleteClick = async (anime) => {
-        const status = await showPopupChange();
-        if (status) {
-            await handleWatchChange(anime, !anime.watched);
-            Swal.fire(`Status changed!`, '', 'success');
-        } else if (status === false) {
-            await handleDeleteAnime(anime.id);
-            Swal.fire(`Anime deleted!`, '', 'success');
-        } else {
-            Swal.fire(`Cancelled!`, '', 'info');
-        }
-    };
+    const status = await showPopupChange(anime.watched);
+    if (status) {
+        await handleWatchChange(anime, !anime.watched);
+        Swal.fire({
+            title: `Moved successfully!`,
+            icon: "success",
+            timer: 500,
+            showConfirmButton: false
+        });
+    } else if (status === false) {
+        await handleDeleteAnime(anime.id);
+        Swal.fire({
+            title: `Anime deleted!`,
+            icon: "success",
+            timer: 500,
+            showConfirmButton: false
+        });
+    } else {
+        Swal.fire({
+            title: `Cancelled!`,
+            icon: "info",
+            timer: 500,
+            showConfirmButton: false
+        });
+    }
+};
 
     const handleDeleteAnime = async (animeId) => {
         try {
@@ -157,14 +223,114 @@ function AnimeList() {
             if (response.status === 204) {
                 fetchUserAnimeList();
             } else {
-                Swal.fire("Failed to delete anime", "", "error");
+                Swal.fire({
+                    title: "Failed to delete anime",
+                    icon: "error",
+                    timer: 500,
+                    showConfirmButton: false
+                });
             }
         } catch (error) {
             console.error("Error deleting anime:", error);
-            Swal.fire("Failed to delete anime", "", "error");
+            Swal.fire({
+                title: "Failed to delete anime",
+                icon: "error",
+                timer: 500,
+                showConfirmButton: false
+            });
         } finally {
             setShowSearchResults(false);
             setSearchTerm("");
+        }
+    };
+
+    const handleDeleteTmpAnime = async (anime) => {
+        const result = await Swal.fire({
+            title: 'Are you sure?',
+            text: `Do you want to delete ${anime.title} from temporary deleted list?`,
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonText: 'Yes, delete it!',
+            cancelButtonText: 'No, keep it'
+        });
+
+        if (result.isConfirmed) {
+            try {
+                const response = await api.delete(`user/anime/temp-deleted/${anime.id}/`);
+                if (response.status === 204) {
+                    fetchUserTmpDeleteAnime();
+                } else {
+                    Swal.fire({
+                        title: "Failed to delete anime",
+                        icon: "error",
+                        timer: 500,
+                        showConfirmButton: false
+                    });
+                }
+            } catch (error) {
+                console.error("Error deleting anime:", error);
+                Swal.fire({
+                    title: "Failed to delete anime",
+                    icon: "error",
+                    timer: 500,
+                    showConfirmButton: false
+                });
+            }
+        } else {
+            Swal.fire({
+                title: "Cancelled",
+                icon: "info",
+                timer: 500,
+                showConfirmButton: false
+            });
+        }
+    };
+
+     const handleDeleteAllTmpAnime = async () => {
+        const result = await Swal.fire({
+            title: 'Are you sure?',
+            text: 'Do you want to delete all temporarily deleted anime?',
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonText: 'Yes, delete all!',
+            cancelButtonText: 'No, keep them'
+        });
+
+        if (result.isConfirmed) {
+            try {
+                const response = await api.delete(`user/anime/temp-deleted/delete-all/${localStorage.getItem("user_id")}/`);
+                if (response.status === 204) {
+                    fetchUserTmpDeleteAnime();
+                    Swal.fire({
+                        title: "All temporarily deleted anime removed",
+                        icon: "success",
+                        timer: 500,
+                        showConfirmButton: false
+                    });
+                } else {
+                    Swal.fire({
+                        title: "Failed to delete all temporarily deleted anime",
+                        icon: "error",
+                        timer: 500,
+                        showConfirmButton: false
+                    });
+                }
+            } catch (error) {
+                console.error("Error deleting all temporarily deleted anime:", error);
+                Swal.fire({
+                    title: "Failed to delete all temporarily deleted anime",
+                    icon: "error",
+                    timer: 500,
+                    showConfirmButton: false
+                });
+            }
+        } else {
+            Swal.fire({
+                title: "Cancelled",
+                icon: "info",
+                timer: 500,
+                showConfirmButton: false
+            });
         }
     };
 
@@ -186,22 +352,23 @@ function AnimeList() {
         });
     };
 
-    const showPopupChange = () => {
-        return Swal.fire({
-            title: 'Add to :',
-            showDenyButton: true,
-            confirmButtonText: 'Edit Status',
-            denyButtonText: 'Delete',
-        }).then((result) => {
-            if (result.isConfirmed) {
-                return true;
-            } else if (result.isDenied) {
-                return false;
-            } else {
-                return null;
-            }
-        });
-    };
+    const showPopupChange = (currentStatus) => {
+    const newStatus = currentStatus ? 'plan to watch' : 'watched';
+    return Swal.fire({
+        title: 'Change status to:',
+        showDenyButton: true,
+        confirmButtonText: `Move to ${newStatus}`,
+        denyButtonText: 'Delete',
+    }).then((result) => {
+        if (result.isConfirmed) {
+            return true;
+        } else if (result.isDenied) {
+            return false;
+        } else {
+            return null;
+        }
+    });
+};
 
     return (
         <div className="min-h-screen bg-[#fdf0d5] pt-20">
@@ -257,12 +424,17 @@ function AnimeList() {
                 {showTmpDeleteAnime && tmpDeleteAnime.length > 0 && (
                     <div className="flex justify-start flex-col">
                         <h2 className="text-2xl font-bold mb-4">Deleted Anime List</h2>
+                        <button
+                        className="bg-slate-800 text-white p-2 rounded m-2 hover:bg-[#780000] w-1/4"
+                        onClick={handleDeleteAllTmpAnime}
+                        >Clear all temporary deleted anime</button>
                         <ul className="flex flex-wrap gap-4">
                             {tmpDeleteAnime.map((anime) => (
                                 <li key={anime.mal_id}
                                     className="bg-white rounded-lg shadow-md overflow-hidden p-2 hover:bg-gray-200 cursor-pointer"
-                                    onClick={() => handleDeleteClick(anime)}>
+                                    onClick={() => handleDeleteTmpAnime(anime)}>
                                     <p className="text-lg font-semibold">{anime.title}</p>
+                                    <img src={anime.image_url} alt={anime.title}/>
                                 </li>
                             ))}
                         </ul>

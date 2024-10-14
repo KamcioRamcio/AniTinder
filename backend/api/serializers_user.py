@@ -1,6 +1,6 @@
 from django.contrib.auth.models import User
 from rest_framework import serializers
-from .models_user import UserAnimeList, Profile
+from .models_user import UserAnimeList, Profile, TempDeletedAnime
 
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
@@ -25,6 +25,13 @@ class UserAnimeSerializer(serializers.ModelSerializer):
         fields = ['id', 'author', 'username', 'title', 'image_url', 'mal_id', 'watched', 'plan_to_watch', 'add_time']
         extra_kwargs = {'author': {'read_only': True}}
 
+class TempDeletedAnimeSerializer(serializers.ModelSerializer):
+
+
+    class Meta:
+        model = TempDeletedAnime
+        fields = ['id', 'author', 'title','image_url','mal_id', 'time_deleted']
+        extra_kwargs = {'author': {'read_only': True}}
 
 
 class ProfileSerializer(serializers.ModelSerializer):

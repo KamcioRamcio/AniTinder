@@ -14,12 +14,19 @@ urlpatterns = [
     path('user/anime/<int:id>/', views_user.UserAnimeByUsernameView.as_view(), name='user-anime-list-by-username'),
     path('anime/all/', views_anime.AnimeAllView.as_view(), name='anime-list'),
     path('user/anime/delete/<int:pk>/', views_user.UserAnimeDeleteView.as_view(), name='user-anime-delete'),
-    path('user/anime/temp-deleted/', views_anime.TempDeletedAnimeView.as_view(), name='user-anime-temp-deleted'),
+
+
+    path('user/anime/temp-deleted/', views_user.TempDeletedAnimeView.as_view(), name='user-anime-temp-deleted'),
+    path('user/anime/temp-deleted/<int:pk>/', views_user.DeleteTempDeletedAnimeView.as_view(),
+         name='user-anime-temp-deleted-delete'),
+    path('user/anime/temp-deleted/delete-all/<int:pk>/', views_user.DeleteAllTmpDeletedAnimeView.as_view(),
+         name='delete-all-temp-deleted-anime'),
+
     path('user/anime/update/<int:mal_id>/', views_user.UserAnimeUpdateView.as_view(), name='user-anime-update'),
 
 
     path('anime/quotes/', views_anime.AnimeQuotesView.as_view(), name='anime-quotes'),
-    #path('user/anime/<int:id>/',)
+
 
     # PASSWORD RESET
 

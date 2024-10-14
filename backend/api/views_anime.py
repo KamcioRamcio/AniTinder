@@ -6,8 +6,8 @@ from django.http import JsonResponse
 from rest_framework import generics
 from rest_framework.permissions import AllowAny, IsAuthenticated
 
-from .models_anime import Genre, Anime, TempDeletedAnime, AnimeQuotes
-from .serializers_anime import GenreSerializer, AnimeSerializer, TempDeletedAnimeSerializer, QuoteSerializer
+from .models_anime import Genre, Anime, AnimeQuotes
+from .serializers_anime import GenreSerializer, AnimeSerializer, QuoteSerializer
 
 
 class GenreList(generics.ListCreateAPIView):
@@ -62,15 +62,3 @@ class AnimeAllView(generics.ListCreateAPIView):
         ).order_by('first_letter')
 
 
-class TempDeletedAnimeView(generics.ListCreateAPIView):
-    serializer_class = TempDeletedAnimeSerializer
-    permission_classes = [AllowAny]
-
-    def get_queryset(self):
-        user = self.request.user
-        return TempDeletedAnime.objects.filter(author=user)
-
-
-
-    def perform_create(self, serializer):
-        serializer.save(author=self.request.user)

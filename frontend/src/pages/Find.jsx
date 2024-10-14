@@ -116,6 +116,7 @@ function Find() {
             const response = await api.post("user/anime/temp-deleted/", {
                 title: anime.title,
                 mal_id: anime.mal_id,
+                image_url: anime.image_url,
             });
             if (response.status === 201) {
                 toast.success('Anime deleted successfully');
