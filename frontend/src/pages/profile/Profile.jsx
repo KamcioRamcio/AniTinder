@@ -23,6 +23,12 @@ function Profile() {
     const id = localStorage.getItem('user_id');
 
     useEffect(() => {
+        if (!id) {
+            console.error("User ID not found in localStorage");
+            return;
+        }});
+
+    useEffect(() => {
         const fetchData = async () => {
             await fetchUserProfile();
             await fetchRecentAnime();

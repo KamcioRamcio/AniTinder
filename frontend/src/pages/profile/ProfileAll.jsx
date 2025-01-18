@@ -6,6 +6,8 @@ import 'react-toastify/dist/ReactToastify.css';
 
 function ProfileAll() {
     const {userId} = useParams();
+    const currentUserId = localStorage.getItem("user_id");
+    const roomName = `${currentUserId}_${userId}`;
 
     const [profileData, setProfileData] = useState({
         bio: "",
@@ -16,7 +18,11 @@ function ProfileAll() {
         friendProfiles: [],
         following: [],
         followingProfiles: [],
+        followers: [], // Added followers
+        followerProfiles: [] // Added followerProfiles
     });
+    const [isFollowing, setIsFollowing] = useState(false);
+    const [isFriend, setIsFriend] = useState(false);
 
     useEffect(() => {
         if (userId) {
@@ -24,6 +30,7 @@ function ProfileAll() {
             fetchUserProfile();
             fetchUserFriends();
             fetchFollowing();
+            fetchFollowers(); // Added call to fetchFollowers
         }
     }, [userId]);
 
@@ -57,6 +64,8 @@ function ProfileAll() {
             setProfileData(prev => ({
                 ...prev, friends: data[0].friends.map(f => f.id), friendProfiles: friendProfiles
             }));
+            const isFriend = data[0].friends.map(f => f.id).includes(parseInt(currentUserId));
+            setIsFriend(isFriend);
         } catch (error) {
             console.error("Error fetching friends", error);
         }
@@ -73,10 +82,29 @@ function ProfileAll() {
             setProfileData(prev => ({
                 ...prev, following: following, followingProfiles: followingProfiles
             }));
+
         } catch (error) {
             console.error("Error fetching following", error);
         }
     };
+
+    const fetchFollowers = async () => {
+        try {
+            const {data} = await api.get(`/user/followers/${userId}/`);
+            const followers = data.map(f => f.user_id);
+            const followerProfiles = await Promise.all(followers.map(async (followId) => {
+                const {data} = await api.get(`/user/profile/${followId}/`);
+                return data;
+            }));
+            setProfileData(prev => ({
+                ...prev, followers: followers, followerProfiles: followerProfiles
+            }));
+            const isFollowing = followers.includes(parseInt(currentUserId));
+            setIsFollowing(isFollowing);
+        } catch (error) {
+            console.error("Error fetching followers", error);
+        }
+    }
 
     const AddFriend = async () => {
         try {
@@ -134,18 +162,28 @@ function ProfileAll() {
                             Anime List
                         </a>
                         <div className="flex mt-6 space-x-4">
-                            <button
-                                className="p-2 rounded font-semibold bg-violet-300 hover:bg-violet-400 transition"
-                                onClick={() => FollowUser()}
-                            >
-                                Follow
-                            </button>
-                            <button
+                            {!isFollowing && (
+                                <button
+                                    className="p-2 rounded font-semibold bg-violet-300 hover:bg-violet-400 transition"
+                                    onClick={() => FollowUser()}
+                                >
+                                    Follow
+                                </button>
+                            )}
+                            {!isFriend &&(
+                                <button
                                 className="p-2 rounded font-semibold bg-violet-300 hover:bg-violet-400 transition"
                                 onClick={() => AddFriend()}
                             >
                                 Add Friend
                             </button>
+                            )}
+                            {isFriend && (
+                            <a
+                                className="p-2 rounded font-semibold bg-violet-300 hover:bg-violet-400 transition"
+                                href={`/chat/${roomName}`}
+                            >Chat</a>
+                            )}
                         </div>
                     </div>
                 </div>
@@ -193,7 +231,21 @@ function ProfileAll() {
                             </li>))}
                     </ul>
                 </div>
+                <div className="bg-[#669bbc] text-white rounded-lg shadow-lg p-6 md:w-1/2">
+                    <p className="text-center font-bold text-xl mb-4">Followers</p>
+                    <ul>
+                        {profileData.followerProfiles.map((follower) => (
+                            <li key={follower.id} className="flex items-center gap-4 border-b border-gray-200 pb-4">
+                                <img src={follower.profile_image} alt={follower.username}
+                                     className="h-24 w-20 rounded-lg shadow-md"/>
+                                <div>
+                                    <a className="text-lg font-semibold text-[#c1121f] hover:underline"
+                                       href={`/profile/${follower.user_id}`}>{follower.username}</a>
+                                </div>
+                            </li>))}
+                    </ul>
             </div>
+        </div>
             <ToastContainer/>
         </div>
     );

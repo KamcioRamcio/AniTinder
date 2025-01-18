@@ -31,7 +31,8 @@ function Form({route, method}) {
                 const response = await api.post(route, { username, password });
                 localStorage.setItem(ACCESS_TOKEN, response.data.access);
                 localStorage.setItem(REFRESH_TOKEN, response.data.refresh);
-                localStorage.setItem('username', username); // Store username
+                localStorage.setItem('username', username);
+
                 navigate("/home");
             } catch (error) {
                 alert(error);

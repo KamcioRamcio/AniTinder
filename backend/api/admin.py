@@ -1,8 +1,7 @@
 from django.contrib import admin
-
-from .models import FriendRequest, FriendList, Profile
-
-# RegisterPage your models here.
+from .models_chat import Chat, ChatMessage
+from .models_friends import FriendRequest, FriendList
+from .models_user import Profile
 
 class FriendListAdmin(admin.ModelAdmin):
     search_fields = ['user__username']
@@ -15,7 +14,6 @@ class FriendListAdmin(admin.ModelAdmin):
 
 admin.site.register(FriendList, FriendListAdmin)
 
-
 class FriendRequestAdmin(admin.ModelAdmin):
     search_fields = ['sender__username', 'receiver__username']
     list_display = ['sender', 'receiver', 'is_active']
@@ -27,4 +25,17 @@ class FriendRequestAdmin(admin.ModelAdmin):
 
 admin.site.register(FriendRequest, FriendRequestAdmin)
 
+
+
+
+admin.site.register(ChatMessage)
 admin.site.register(Profile)
+
+@admin.register(Chat)
+class ChatAdmin(admin.ModelAdmin):
+    list_display = ['id']
+    search_fields = ['participants__username']
+
+    class Meta:
+        model = Chat
+
