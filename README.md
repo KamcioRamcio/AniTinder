@@ -44,7 +44,7 @@ AniTinder is a web application similar to Tinder but designed for anime recommen
 
 1. Clone the repository:
     ```bash
-    git clone https://github.com/yourusername/AniTinder.git
+    git clone git clone https://github.com/yourusername/AniTinder.git
     cd AniTinder/backend
     ```
 
